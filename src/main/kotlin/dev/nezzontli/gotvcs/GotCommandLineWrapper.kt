@@ -55,4 +55,12 @@ class GotCommandLineWrapper {
     @Throws(VcsException::class)
     fun catAtBase(workDir: File, relativePath: String): String =
         run(workDir, "cat", "-c", ":base", "-P", relativePath)
+
+    @Throws(VcsException::class)
+    fun baseCommit(workDir: File): String {
+        val output = run(workDir, "info")
+        val line = output.lineSequence().firstOrNull { it.trimStart().startsWith("work tree base commit:") }
+            ?: throw VcsException("got info no reportó un commit base para $workDir")
+        return line.substringAfter("work tree base commit:").trim()
+    }
 }

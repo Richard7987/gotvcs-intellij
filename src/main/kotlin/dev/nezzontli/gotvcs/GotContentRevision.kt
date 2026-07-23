@@ -19,5 +19,9 @@ class GotContentRevision(
 
     override fun getFile(): FilePath = filePath
 
-    override fun getRevisionNumber(): VcsRevisionNumber = VcsRevisionNumber.NULL
+    override fun getRevisionNumber(): VcsRevisionNumber = try {
+        GotRevisionNumber(commandLine.baseCommit(workDir))
+    } catch (e: VcsException) {
+        VcsRevisionNumber.NULL
+    }
 }

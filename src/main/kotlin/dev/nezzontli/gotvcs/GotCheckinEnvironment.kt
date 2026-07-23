@@ -5,6 +5,7 @@ import com.intellij.openapi.vcs.FilePath
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vcs.changes.Change
+import com.intellij.openapi.vcs.changes.CommitContext
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
@@ -27,7 +28,23 @@ class GotCheckinEnvironment(
 
     override fun isRefreshAfterCommitNeeded(): Boolean = true
 
-    override fun commit(changes: MutableList<out Change>, commitMessage: String): MutableList<VcsException> {
+    // CheckinEnvironment.commit() tiene 3 sobrecargas con implementación
+    // default: 2-args -> delega en la de CommitContext -> delega en la de
+    // NullableFunction -> devuelve null (no-op). La plataforma invoca
+    // directamente la de CommitContext, no la de 2 args -- si solo se
+    // sobreescribe esta última, el commit real nunca corre y el IDE igual
+    // reporta éxito (verificado en vivo con javap -c sobre la interfaz).
+    override fun commit(changes: MutableList<out Change>, commitMessage: String): MutableList<VcsException> =
+        doCommit(changes, commitMessage)
+
+    override fun commit(
+        changes: MutableList<out Change>,
+        commitMessage: String,
+        commitContext: CommitContext,
+        feedback: MutableSet<in String>,
+    ): MutableList<VcsException> = doCommit(changes, commitMessage)
+
+    private fun doCommit(changes: List<Change>, commitMessage: String): MutableList<VcsException> {
         val exceptions = mutableListOf<VcsException>()
         val filePaths = changes.mapNotNull { it.afterRevision?.file ?: it.beforeRevision?.file }
         for ((workDir, paths) in groupByRoot(filePaths)) {

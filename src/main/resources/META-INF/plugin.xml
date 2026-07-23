@@ -1,0 +1,15 @@
+<idea-plugin>
+    <id>dev.nezzontli.gotvcs</id>
+    <name>Game of Trees (got) VCS</name>
+    <vendor>ale</vendor>
+
+    <depends>com.intellij.modules.vcs</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <vcs name="got"
+             vcsClass="dev.nezzontli.gotvcs.GotVcs"
+             displayName="got"
+             administrativeAreaName=".got"/>
+        <vcsRootChecker implementation="dev.nezzontli.gotvcs.GotVcsRootChecker"/>
+    </extensions>
+</idea-plugin>

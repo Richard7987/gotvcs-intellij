@@ -76,18 +76,18 @@ class GotVcsHistoryProvider(
             val baseRevision = GotRevisionNumber(commandLine.baseCommit(workDir))
 
             // reportCreatedEmptySession espera una sesión REALMENTE vacía: el
-            // panel de "Show History" usa este camino (no createSessionFor),
-            // y pasarle una sesión ya poblada + acceptRevision() por cada
-            // entrada duplicaba cada commit (confirmado en vivo: cada fila
-            // aparecía dos veces).
+            // panel de "Show History" usa este camino (no createSessionFor).
+            // partner.acceptRevision() ya actualiza esta misma sesión por su
+            // cuenta -- llamar además session.appendRevision() duplicaba cada
+            // commit (confirmado en vivo dos veces: primero por pasar una
+            // sesión ya poblada, y de nuevo acá por agregarlas por ambos
+            // caminos a la vez).
             val session = GotVcsHistorySession(emptyList(), baseRevision)
             partner.reportCreatedEmptySession(session)
 
             val entries = commandLine.log(workDir, relativePath.ifEmpty { null })
             for (entry in entries) {
-                val revision = GotFileRevision(workDir, relativePath, commandLine, entry)
-                session.appendRevision(revision)
-                partner.acceptRevision(revision)
+                partner.acceptRevision(GotFileRevision(workDir, relativePath, commandLine, entry))
             }
         } catch (e: VcsException) {
             partner.reportException(e)

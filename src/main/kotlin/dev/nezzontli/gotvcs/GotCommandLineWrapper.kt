@@ -9,6 +9,10 @@ import java.nio.charset.StandardCharsets
 
 data class GotStatusEntry(val code: Char, val stagedCode: Char, val path: String)
 
+data class GotLogEntry(val commitId: String, val author: String, val date: String, val message: String)
+
+data class GotUpdateEntry(val code: Char, val path: String)
+
 /**
  * Centraliza todas las invocaciones al binario `got`. La ruta de abajo es la
  * del store de Nix resuelta al momento de escribir este código
@@ -57,6 +61,10 @@ class GotCommandLineWrapper {
         run(workDir, "cat", "-c", ":base", "-P", relativePath)
 
     @Throws(VcsException::class)
+    fun catAt(workDir: File, commitId: String, relativePath: String): String =
+        run(workDir, "cat", "-c", commitId, "-P", relativePath)
+
+    @Throws(VcsException::class)
     fun baseCommit(workDir: File): String {
         val output = run(workDir, "info")
         val line = output.lineSequence().firstOrNull { it.trimStart().startsWith("work tree base commit:") }
@@ -86,5 +94,61 @@ class GotCommandLineWrapper {
     fun revert(workDir: File, paths: List<String>) {
         if (paths.isEmpty()) return
         run(workDir, *(arrayOf("revert", "-R") + paths))
+    }
+
+    /** Historial vía `got log`, formato verbose por defecto (bloques separados por líneas de guiones). */
+    @Throws(VcsException::class)
+    fun log(workDir: File, relativePath: String?, limit: Int = 500): List<GotLogEntry> {
+        val args = mutableListOf("log", "-l", limit.toString())
+        if (relativePath != null) args.add(relativePath)
+        val output = run(workDir, *args.toTypedArray())
+
+        val entries = mutableListOf<GotLogEntry>()
+        var commitId: String? = null
+        var author: String? = null
+        var date: String? = null
+        val message = StringBuilder()
+
+        fun flush() {
+            val id = commitId
+            if (id != null) {
+                entries.add(GotLogEntry(id, author.orEmpty(), date.orEmpty(), message.toString().trim('\n')))
+            }
+            commitId = null
+            author = null
+            date = null
+            message.setLength(0)
+        }
+
+        for (line in output.lineSequence()) {
+            when {
+                line.isBlank() && commitId == null -> Unit
+                line.all { it == '-' } && line.isNotEmpty() -> flush()
+                line.startsWith("commit ") -> commitId = line.removePrefix("commit ").trim().substringBefore(' ')
+                line.startsWith("from: ") -> author = line.removePrefix("from: ").trim()
+                line.startsWith("date: ") -> date = line.removePrefix("date: ").trim()
+                line.startsWith(" ") -> message.appendLine(line.trimStart(' '))
+            }
+        }
+        flush()
+        return entries
+    }
+
+    @Throws(VcsException::class)
+    fun fetch(workDir: File) {
+        run(workDir, "fetch")
+    }
+
+    /** `got update`, formato de estado similar a `got status` (código + 2 espacios + path). */
+    @Throws(VcsException::class)
+    fun update(workDir: File): List<GotUpdateEntry> {
+        val output = run(workDir, "update")
+        return output.lineSequence()
+            .filter { it.isNotBlank() && it[0] != ' ' }
+            .mapNotNull { line ->
+                if (line.length < 3) return@mapNotNull null
+                GotUpdateEntry(line[0], line.substring(3))
+            }
+            .toList()
     }
 }

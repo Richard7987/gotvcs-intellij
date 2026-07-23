@@ -31,12 +31,14 @@ class GotCommandLineWrapper {
         val commandLine = GeneralCommandLine(binaryPath(), *args)
             .withWorkDirectory(workDir)
             .withCharset(StandardCharsets.UTF_8)
-        // GeneralCommandLine usa por defecto un snapshot de entorno cacheado
-        // por la plataforma (EnvironmentUtil), no el entorno real del proceso
-        // de IntelliJ. En este setup (gpg-agent con soporte ssh) ese snapshot
-        // puede no coincidir con SSH_AUTH_SOCK actual, y got/ssh fallan con
-        // "Permission denied (publickey)" aunque el agente esté vivo y con la
-        // clave cargada. Se fuerza explícitamente el valor real del proceso.
+            // Fuerza el entorno real del proceso de IntelliJ (System.getenv,
+            // el mismo que ve /proc/<pid>/environ) en vez del snapshot
+            // cacheado por la plataforma (EnvironmentUtil) que usa CONSOLE
+            // por defecto. Ver GotCommandLineWrapper: el fix anterior (solo
+            // forzar SSH_AUTH_SOCK sobre el snapshot CONSOLE) no fue
+            // suficiente para got fetch por SSH -- se prueba reemplazando
+            // la base entera del entorno.
+            .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.SYSTEM)
         System.getenv("SSH_AUTH_SOCK")?.let { commandLine.environment["SSH_AUTH_SOCK"] = it }
         val output = try {
             ExecUtil.execAndGetOutput(commandLine)
@@ -44,7 +46,13 @@ class GotCommandLineWrapper {
             throw VcsException("No se pudo ejecutar got ${args.joinToString(" ")}: ${e.message}", e)
         }
         if (output.exitCode != 0) {
-            throw VcsException("got ${args.joinToString(" ")} salió con código ${output.exitCode}: ${output.stderr.trim()}")
+            // SSH_AUTH_SOCK visto por el JVM se incluye temporalmente en el
+            // mensaje (deuda de diagnóstico, Fase 6) para confirmar en vivo
+            // qué valor recibe realmente el subproceso.
+            throw VcsException(
+                "got ${args.joinToString(" ")} salió con código ${output.exitCode}: " +
+                    "${output.stderr.trim()} [SSH_AUTH_SOCK=${System.getenv("SSH_AUTH_SOCK")}]"
+            )
         }
         return output.stdout
     }

@@ -2,6 +2,11 @@
     <id>dev.nezzontli.gotvcs</id>
     <name>Game of Trees (got) VCS</name>
     <vendor>ale</vendor>
+    <description>
+        Integra Game of Trees (got) como proveedor de control de versiones
+        nativo: detección de work trees .got/, estado de archivos, diff en
+        el editor, commit/rollback, historial y update/fetch desde la UI.
+    </description>
 
     <depends>com.intellij.modules.vcs</depends>
 

@@ -31,6 +31,13 @@ class GotCommandLineWrapper {
         val commandLine = GeneralCommandLine(binaryPath(), *args)
             .withWorkDirectory(workDir)
             .withCharset(StandardCharsets.UTF_8)
+        // GeneralCommandLine usa por defecto un snapshot de entorno cacheado
+        // por la plataforma (EnvironmentUtil), no el entorno real del proceso
+        // de IntelliJ. En este setup (gpg-agent con soporte ssh) ese snapshot
+        // puede no coincidir con SSH_AUTH_SOCK actual, y got/ssh fallan con
+        // "Permission denied (publickey)" aunque el agente esté vivo y con la
+        // clave cargada. Se fuerza explícitamente el valor real del proceso.
+        System.getenv("SSH_AUTH_SOCK")?.let { commandLine.environment["SSH_AUTH_SOCK"] = it }
         val output = try {
             ExecUtil.execAndGetOutput(commandLine)
         } catch (e: ExecutionException) {

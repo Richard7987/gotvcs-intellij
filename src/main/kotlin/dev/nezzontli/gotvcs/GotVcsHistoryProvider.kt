@@ -12,6 +12,7 @@ import com.intellij.openapi.vcs.history.VcsDependentHistoryComponents
 import com.intellij.openapi.vcs.history.VcsFileRevision
 import com.intellij.openapi.vcs.history.VcsHistoryProvider
 import com.intellij.openapi.vcs.history.VcsHistorySession
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.util.ui.ColumnInfo
 import java.io.File
@@ -20,6 +21,8 @@ class GotVcsHistoryProvider(
     private val project: Project,
     private val commandLine: GotCommandLineWrapper,
 ) : VcsHistoryProvider {
+
+    private val LOG = Logger.getInstance(GotVcsHistoryProvider::class.java)
 
     override fun getUICustomization(session: VcsHistorySession, forShortcutRegistration: javax.swing.JComponent) =
         VcsDependentHistoryComponents.createOnlyColumns(emptyArray<ColumnInfo<*, *>>())
@@ -38,16 +41,26 @@ class GotVcsHistoryProvider(
 
     @Throws(VcsException::class)
     override fun createSessionFor(filePath: FilePath): VcsHistorySession {
-        val vcsRoot = ProjectLevelVcsManager.getInstance(project).getVcsRootFor(filePath)
-            ?: throw VcsException("$filePath no pertenece a ningún work tree got")
-        val workDir = File(vcsRoot.path)
-        val relativePath = VfsUtilCore.getRelativePath(filePath.virtualFile ?: vcsRoot, vcsRoot)
-            ?: throw VcsException("No se pudo resolver la ruta relativa de $filePath en $workDir")
+        try {
+            val vcsRoot = ProjectLevelVcsManager.getInstance(project).getVcsRootFor(filePath)
+                ?: throw VcsException("$filePath no pertenece a ningún work tree got")
+            val workDir = File(vcsRoot.path)
+            val relativePath = VfsUtilCore.getRelativePath(filePath.virtualFile ?: vcsRoot, vcsRoot)
+                ?: throw VcsException("No se pudo resolver la ruta relativa de $filePath en $workDir")
 
-        val entries = commandLine.log(workDir, relativePath.ifEmpty { null })
-        val revisions: List<VcsFileRevision> = entries.map { GotFileRevision(workDir, relativePath, commandLine, it) }
-        val baseRevision = GotRevisionNumber(commandLine.baseCommit(workDir))
-        return GotVcsHistorySession(revisions, baseRevision)
+            val entries = commandLine.log(workDir, relativePath.ifEmpty { null })
+            val revisions: List<VcsFileRevision> = entries.map { GotFileRevision(workDir, relativePath, commandLine, it) }
+            val baseRevision = GotRevisionNumber(commandLine.baseCommit(workDir))
+            return GotVcsHistorySession(revisions, baseRevision)
+        } catch (e: VcsException) {
+            throw e
+        } catch (e: Exception) {
+            // El panel de historial solo muestra e.message (a veces como
+            // "Unknown error" si es null); loggeamos el stack completo para
+            // poder diagnosticar fallos que no sean VcsException nuestras.
+            LOG.warn("Fallo al construir el historial got para $filePath", e)
+            throw VcsException("${e.javaClass.simpleName}: ${e.message ?: "sin mensaje"}", e)
+        }
     }
 
     @Throws(VcsException::class)

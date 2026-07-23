@@ -157,21 +157,24 @@ class GotCommandLineWrapper {
 
     @Throws(VcsException::class)
     fun fetch(workDir: File) {
-        // -v también se reenvía a ssh(1): diagnóstico temporal para el fallo
-        // de "Permission denied (publickey)" reportado en vivo (Fase 6).
-        run(workDir, "fetch", "-v")
+        run(workDir, "fetch")
     }
 
-    /** `got update`, formato de estado similar a `got status` (código + 2 espacios + path). */
+    /**
+     * `got update`, formato de estado similar a `got status` (código + 2
+     * espacios + path). Cuando no hay nada que traer, got update imprime en
+     * cambio texto libre como "Already up-to-date" -- sin el patrón de 2
+     * espacios en las posiciones 1-2, así que se descarta explícitamente en
+     * vez de asumir que toda línea no vacía es una entrada de estado
+     * (confirmado en vivo: "Already up-to-date" se parseaba como code='A',
+     * path="eady up-to-date").
+     */
     @Throws(VcsException::class)
     fun update(workDir: File): List<GotUpdateEntry> {
         val output = run(workDir, "update")
         return output.lineSequence()
-            .filter { it.isNotBlank() && it[0] != ' ' }
-            .mapNotNull { line ->
-                if (line.length < 3) return@mapNotNull null
-                GotUpdateEntry(line[0], line.substring(3))
-            }
+            .filter { it.length >= 3 && it[1] == ' ' && it[2] == ' ' }
+            .map { line -> GotUpdateEntry(line[0], line.substring(3)) }
             .toList()
     }
 }

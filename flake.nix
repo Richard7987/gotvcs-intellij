@@ -13,7 +13,7 @@
       devShells.${system}.default = pkgs.mkShell {
         packages = [
           pkgs.jdk21
-          pkgs.gradle
+          pkgs.gradle_9
         ];
 
         JAVA_HOME = "${pkgs.jdk21}/lib/openjdk";

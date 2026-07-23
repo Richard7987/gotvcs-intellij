@@ -17,7 +17,7 @@ repositories {
 dependencies {
     intellijPlatform {
         local(providers.gradleProperty("ideLocalPath").get())
-        bundledPlugin("com.intellij.modules.vcs")
+        bundledModule("com.intellij.modules.vcs")
     }
 }
 

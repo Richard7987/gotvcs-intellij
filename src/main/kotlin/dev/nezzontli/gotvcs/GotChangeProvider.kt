@@ -9,7 +9,6 @@ import com.intellij.openapi.vcs.changes.ChangelistBuilder
 import com.intellij.openapi.vcs.changes.CurrentContentRevision
 import com.intellij.openapi.vcs.changes.LocallyDeletedChange
 import com.intellij.openapi.vcs.changes.VcsDirtyScope
-import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.vcsUtil.VcsUtil
 import java.io.File
@@ -31,12 +30,9 @@ class GotChangeProvider(private val commandLine: GotCommandLineWrapper) : Change
                 val filePath = VcsUtil.getFilePath(absoluteFile, false)
 
                 when (entry.code) {
-                    '?' -> {
-                        val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(absoluteFile)
-                        if (virtualFile != null) builder.processUnversionedFile(virtualFile)
-                    }
+                    '?' -> builder.processUnversionedFile(filePath)
 
-                    '!' -> builder.processLocallyDeletedFile(LocallyDeletedChange(filePath, filePath.path))
+                    '!' -> builder.processLocallyDeletedFile(LocallyDeletedChange(filePath))
 
                     'M', 'm', 'C' -> {
                         val status = if (entry.code == 'C') FileStatus.MERGED_WITH_CONFLICTS else FileStatus.MODIFIED

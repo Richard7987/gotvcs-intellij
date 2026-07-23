@@ -14,15 +14,15 @@ data class GotLogEntry(val commitId: String, val author: String, val date: Strin
 data class GotUpdateEntry(val code: Char, val path: String)
 
 /**
- * Centraliza todas las invocaciones al binario `got`. La ruta de abajo es la
- * del store de Nix resuelta al momento de escribir este código
- * (readlink -f /etc/profiles/per-user/ale/bin/idea muestra el store path del
- * IDE; el de got se resolvió igual desde /run/current-system/sw/bin/got).
- * Cambia con cada rebuild del sistema -> deuda para GotConfigurable (Fase 6).
+ * Centraliza todas las invocaciones al binario `got`. Ruta al binario y
+ * SSH_AUTH_SOCK son configurables en Settings > Version Control > got
+ * (GotConfigurable/GotSettingsState); si no se configuran, caen a detección
+ * automática -- ver binaryPath()/sshAuthSock().
  */
 class GotCommandLineWrapper {
 
     private fun binaryPath(): String {
+        GotSettingsState.getInstance().gotBinaryPath.takeIf { it.isNotBlank() }?.let { return it }
         val nixPath = File("/run/current-system/sw/bin/got")
         return if (nixPath.canExecute()) nixPath.path else "got"
     }
@@ -32,11 +32,12 @@ class GotCommandLineWrapper {
      * IntelliJ mismo (System.getenv, no solo el snapshot cacheado de
      * GeneralCommandLine) según cómo Hyprland lo haya lanzado esa sesión --
      * no es algo que este plugin pueda forzar si el valor real no existe.
-     * Fallback a la ruta fija del socket ssh de gpg-agent en este sistema
-     * (uid 1000, único usuario). Igual que la ruta de `got`, debería ser
-     * configurable en la Fase 6 en vez de estar fija.
+     * Fallback: override manual en Settings, y si tampoco está seteado, la
+     * ruta fija del socket ssh de gpg-agent en este sistema (uid 1000,
+     * único usuario).
      */
     private fun sshAuthSock(): String? {
+        GotSettingsState.getInstance().sshAuthSock.takeIf { it.isNotBlank() }?.let { return it }
         System.getenv("SSH_AUTH_SOCK")?.let { return it }
         val fallback = File("/run/user/1000/gnupg/S.gpg-agent.ssh")
         return if (fallback.exists()) fallback.path else null
@@ -47,18 +48,14 @@ class GotCommandLineWrapper {
             .withWorkDirectory(workDir)
             .withCharset(StandardCharsets.UTF_8)
             .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.SYSTEM)
-        val sshAuthSock = sshAuthSock()
-        sshAuthSock?.let { commandLine.environment["SSH_AUTH_SOCK"] = it }
+        sshAuthSock()?.let { commandLine.environment["SSH_AUTH_SOCK"] = it }
         val output = try {
             ExecUtil.execAndGetOutput(commandLine)
         } catch (e: ExecutionException) {
             throw VcsException("No se pudo ejecutar got ${args.joinToString(" ")}: ${e.message}", e)
         }
         if (output.exitCode != 0) {
-            throw VcsException(
-                "got ${args.joinToString(" ")} salió con código ${output.exitCode}: " +
-                    "${output.stderr.trim()} [SSH_AUTH_SOCK=$sshAuthSock]"
-            )
+            throw VcsException("got ${args.joinToString(" ")} salió con código ${output.exitCode}: ${output.stderr.trim()}")
         }
         return output.stdout
     }

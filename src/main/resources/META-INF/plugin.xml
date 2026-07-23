@@ -11,5 +11,7 @@
              displayName="got"
              administrativeAreaName=".got"/>
         <vcsRootChecker implementation="dev.nezzontli.gotvcs.GotVcsRootChecker"/>
+        <applicationService serviceImplementation="dev.nezzontli.gotvcs.GotSettingsState"/>
+        <applicationConfigurable instance="dev.nezzontli.gotvcs.GotConfigurable" displayName="got" parentId="vcs"/>
     </extensions>
 </idea-plugin>

@@ -1,0 +1,69 @@
+package dev.nezzontli.gotvcs
+
+import com.intellij.openapi.options.Configurable
+import com.intellij.openapi.ui.TextFieldWithBrowseButton
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import com.intellij.util.ui.FormBuilder
+import javax.swing.JComponent
+import javax.swing.JPanel
+import javax.swing.JTextField
+
+class GotConfigurable : Configurable {
+
+    private var panel: JPanel? = null
+    private var gotBinaryField: TextFieldWithBrowseButton? = null
+    private var sshAuthSockField: JTextField? = null
+
+    override fun getDisplayName(): String = "got"
+
+    override fun createComponent(): JComponent {
+        val binaryField = TextFieldWithBrowseButton().apply {
+            addBrowseFolderListener(
+                "Ruta al binario got",
+                "Vacío para detectarlo automáticamente (/run/current-system/sw/bin/got o PATH)",
+                null,
+                FileChooserDescriptorFactory.createSingleFileDescriptor(),
+            )
+        }
+        val sockField = JTextField()
+
+        gotBinaryField = binaryField
+        sshAuthSockField = sockField
+
+        val built = FormBuilder.createFormBuilder()
+            .addLabeledComponent("Binario got:", binaryField)
+            .addTooltip("Vacío para detectarlo automáticamente (/run/current-system/sw/bin/got o PATH)")
+            .addLabeledComponent("SSH_AUTH_SOCK:", sockField)
+            .addTooltip("Vacío para usar el del proceso de IntelliJ, con fallback a /run/user/<uid>/gnupg/S.gpg-agent.ssh")
+            .addComponentFillVertically(JPanel(), 0)
+            .panel
+
+        panel = built
+        reset()
+        return built
+    }
+
+    override fun isModified(): Boolean {
+        val settings = GotSettingsState.getInstance()
+        return gotBinaryField?.text.orEmpty() != settings.gotBinaryPath ||
+            sshAuthSockField?.text.orEmpty() != settings.sshAuthSock
+    }
+
+    override fun apply() {
+        val settings = GotSettingsState.getInstance()
+        settings.gotBinaryPath = gotBinaryField?.text.orEmpty()
+        settings.sshAuthSock = sshAuthSockField?.text.orEmpty()
+    }
+
+    override fun reset() {
+        val settings = GotSettingsState.getInstance()
+        gotBinaryField?.text = settings.gotBinaryPath
+        sshAuthSockField?.text = settings.sshAuthSock
+    }
+
+    override fun disposeUIResources() {
+        panel = null
+        gotBinaryField = null
+        sshAuthSockField = null
+    }
+}

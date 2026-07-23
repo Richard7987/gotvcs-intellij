@@ -6,7 +6,6 @@ import com.intellij.openapi.vcs.FilePath
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vcs.history.DiffFromHistoryHandler
-import com.intellij.openapi.vcs.history.VcsAbstractHistorySession
 import com.intellij.openapi.vcs.history.VcsAppendableHistorySessionPartner
 import com.intellij.openapi.vcs.history.VcsDependentHistoryComponents
 import com.intellij.openapi.vcs.history.VcsFileRevision
@@ -39,15 +38,22 @@ class GotVcsHistoryProvider(
 
     override fun canShowHistoryFor(virtualFile: com.intellij.openapi.vfs.VirtualFile): Boolean = true
 
+    private data class RootAndPath(val workDir: File, val relativePath: String)
+
+    @Throws(VcsException::class)
+    private fun resolveRootAndPath(filePath: FilePath): RootAndPath {
+        val vcsRoot = ProjectLevelVcsManager.getInstance(project).getVcsRootFor(filePath)
+            ?: throw VcsException("$filePath no pertenece a ningún work tree got")
+        val workDir = File(vcsRoot.path)
+        val relativePath = VfsUtilCore.getRelativePath(filePath.virtualFile ?: vcsRoot, vcsRoot)
+            ?: throw VcsException("No se pudo resolver la ruta relativa de $filePath en $workDir")
+        return RootAndPath(workDir, relativePath)
+    }
+
     @Throws(VcsException::class)
     override fun createSessionFor(filePath: FilePath): VcsHistorySession {
         try {
-            val vcsRoot = ProjectLevelVcsManager.getInstance(project).getVcsRootFor(filePath)
-                ?: throw VcsException("$filePath no pertenece a ningún work tree got")
-            val workDir = File(vcsRoot.path)
-            val relativePath = VfsUtilCore.getRelativePath(filePath.virtualFile ?: vcsRoot, vcsRoot)
-                ?: throw VcsException("No se pudo resolver la ruta relativa de $filePath en $workDir")
-
+            val (workDir, relativePath) = resolveRootAndPath(filePath)
             val entries = commandLine.log(workDir, relativePath.ifEmpty { null })
             val revisions: List<VcsFileRevision> = entries.map { GotFileRevision(workDir, relativePath, commandLine, it) }
             val baseRevision = GotRevisionNumber(commandLine.baseCommit(workDir))
@@ -66,11 +72,28 @@ class GotVcsHistoryProvider(
     @Throws(VcsException::class)
     override fun reportAppendableHistory(filePath: FilePath, partner: VcsAppendableHistorySessionPartner) {
         try {
-            val session = createSessionFor(filePath) as VcsAbstractHistorySession
+            val (workDir, relativePath) = resolveRootAndPath(filePath)
+            val baseRevision = GotRevisionNumber(commandLine.baseCommit(workDir))
+
+            // reportCreatedEmptySession espera una sesión REALMENTE vacía: el
+            // panel de "Show History" usa este camino (no createSessionFor),
+            // y pasarle una sesión ya poblada + acceptRevision() por cada
+            // entrada duplicaba cada commit (confirmado en vivo: cada fila
+            // aparecía dos veces).
+            val session = GotVcsHistorySession(emptyList(), baseRevision)
             partner.reportCreatedEmptySession(session)
-            session.revisionList.forEach { partner.acceptRevision(it) }
+
+            val entries = commandLine.log(workDir, relativePath.ifEmpty { null })
+            for (entry in entries) {
+                val revision = GotFileRevision(workDir, relativePath, commandLine, entry)
+                session.appendRevision(revision)
+                partner.acceptRevision(revision)
+            }
         } catch (e: VcsException) {
             partner.reportException(e)
+        } catch (e: Exception) {
+            LOG.warn("Fallo al construir el historial got (appendable) para $filePath", e)
+            partner.reportException(VcsException("${e.javaClass.simpleName}: ${e.message ?: "sin mensaje"}", e))
         }
     }
 }

@@ -18,5 +18,13 @@
         <vcsRootChecker implementation="dev.nezzontli.gotvcs.GotVcsRootChecker"/>
         <applicationService serviceImplementation="dev.nezzontli.gotvcs.GotSettingsState"/>
         <applicationConfigurable instance="dev.nezzontli.gotvcs.GotConfigurable" displayName="got" parentId="vcs"/>
+        <notificationGroup id="got" displayType="BALLOON"/>
     </extensions>
+
+    <actions>
+        <action id="Got.Send" class="dev.nezzontli.gotvcs.GotSendAction" text="Send (got send)"
+                description="Envía los cambios locales al remoto vía got send">
+            <add-to-group group-id="Vcs.Operations.Popup" anchor="last"/>
+        </action>
+    </actions>
 </idea-plugin>

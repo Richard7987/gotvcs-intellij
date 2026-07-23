@@ -157,6 +157,10 @@ class GotCommandLineWrapper {
         run(workDir, "fetch")
     }
 
+    /** `got send`: sin argumentos, usa el remoto "origin" y la rama actual del work tree. */
+    @Throws(VcsException::class)
+    fun send(workDir: File): String = run(workDir, "send")
+
     /**
      * `got update`, formato de estado similar a `got status` (código + 2
      * espacios + path). Cuando no hay nada que traer, got update imprime en

@@ -63,4 +63,28 @@ class GotCommandLineWrapper {
             ?: throw VcsException("got info no reportó un commit base para $workDir")
         return line.substringAfter("work tree base commit:").trim()
     }
+
+    @Throws(VcsException::class)
+    fun commit(workDir: File, message: String, paths: List<String>) {
+        if (paths.isEmpty()) return
+        run(workDir, *(arrayOf("commit", "-m", message) + paths))
+    }
+
+    @Throws(VcsException::class)
+    fun add(workDir: File, paths: List<String>) {
+        if (paths.isEmpty()) return
+        run(workDir, *(arrayOf("add") + paths))
+    }
+
+    @Throws(VcsException::class)
+    fun remove(workDir: File, paths: List<String>) {
+        if (paths.isEmpty()) return
+        run(workDir, *(arrayOf("remove", "-f") + paths))
+    }
+
+    @Throws(VcsException::class)
+    fun revert(workDir: File, paths: List<String>) {
+        if (paths.isEmpty()) return
+        run(workDir, *(arrayOf("revert", "-R") + paths))
+    }
 }

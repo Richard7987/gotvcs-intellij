@@ -143,7 +143,9 @@ class GotCommandLineWrapper {
 
     @Throws(VcsException::class)
     fun fetch(workDir: File) {
-        run(workDir, "fetch")
+        // -v también se reenvía a ssh(1): diagnóstico temporal para el fallo
+        // de "Permission denied (publickey)" reportado en vivo (Fase 6).
+        run(workDir, "fetch", "-v")
     }
 
     /** `got update`, formato de estado similar a `got status` (código + 2 espacios + path). */

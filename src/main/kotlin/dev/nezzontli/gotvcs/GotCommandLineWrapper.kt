@@ -27,31 +27,37 @@ class GotCommandLineWrapper {
         return if (nixPath.canExecute()) nixPath.path else "got"
     }
 
+    /**
+     * Confirmado en vivo: SSH_AUTH_SOCK puede llegar null al proceso de
+     * IntelliJ mismo (System.getenv, no solo el snapshot cacheado de
+     * GeneralCommandLine) según cómo Hyprland lo haya lanzado esa sesión --
+     * no es algo que este plugin pueda forzar si el valor real no existe.
+     * Fallback a la ruta fija del socket ssh de gpg-agent en este sistema
+     * (uid 1000, único usuario). Igual que la ruta de `got`, debería ser
+     * configurable en la Fase 6 en vez de estar fija.
+     */
+    private fun sshAuthSock(): String? {
+        System.getenv("SSH_AUTH_SOCK")?.let { return it }
+        val fallback = File("/run/user/1000/gnupg/S.gpg-agent.ssh")
+        return if (fallback.exists()) fallback.path else null
+    }
+
     private fun run(workDir: File, vararg args: String): String {
         val commandLine = GeneralCommandLine(binaryPath(), *args)
             .withWorkDirectory(workDir)
             .withCharset(StandardCharsets.UTF_8)
-            // Fuerza el entorno real del proceso de IntelliJ (System.getenv,
-            // el mismo que ve /proc/<pid>/environ) en vez del snapshot
-            // cacheado por la plataforma (EnvironmentUtil) que usa CONSOLE
-            // por defecto. Ver GotCommandLineWrapper: el fix anterior (solo
-            // forzar SSH_AUTH_SOCK sobre el snapshot CONSOLE) no fue
-            // suficiente para got fetch por SSH -- se prueba reemplazando
-            // la base entera del entorno.
             .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.SYSTEM)
-        System.getenv("SSH_AUTH_SOCK")?.let { commandLine.environment["SSH_AUTH_SOCK"] = it }
+        val sshAuthSock = sshAuthSock()
+        sshAuthSock?.let { commandLine.environment["SSH_AUTH_SOCK"] = it }
         val output = try {
             ExecUtil.execAndGetOutput(commandLine)
         } catch (e: ExecutionException) {
             throw VcsException("No se pudo ejecutar got ${args.joinToString(" ")}: ${e.message}", e)
         }
         if (output.exitCode != 0) {
-            // SSH_AUTH_SOCK visto por el JVM se incluye temporalmente en el
-            // mensaje (deuda de diagnóstico, Fase 6) para confirmar en vivo
-            // qué valor recibe realmente el subproceso.
             throw VcsException(
                 "got ${args.joinToString(" ")} salió con código ${output.exitCode}: " +
-                    "${output.stderr.trim()} [SSH_AUTH_SOCK=${System.getenv("SSH_AUTH_SOCK")}]"
+                    "${output.stderr.trim()} [SSH_AUTH_SOCK=$sshAuthSock]"
             )
         }
         return output.stdout

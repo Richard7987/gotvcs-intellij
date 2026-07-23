@@ -6,9 +6,12 @@ estado de archivos en el panel de Commit, diffs, historial y commits desde la UI
 
 ## Estado actual
 
-Fases 1-4 del plan: esqueleto del plugin, detección de raíces `got`, estado
-de archivos, diff nativo (gutter de líneas) y commit/rollback desde la UI.
-Historial y update quedan para fases posteriores.
+Las 6 fases del plan original: esqueleto del plugin, detección de raíces
+`got`, estado de archivos, diff nativo (gutter de líneas), commit/rollback,
+historial (`got log`) y update/fetch (`got update`/`got fetch`) desde la UI,
+y panel de configuración en *Settings > Version Control > got* (ruta al
+binario `got` y override de `SSH_AUTH_SOCK`). Validado con
+`gradle verifyPlugin` contra IU-261.26222.65 e IU-262.8665.337.
 
 ## Build
 

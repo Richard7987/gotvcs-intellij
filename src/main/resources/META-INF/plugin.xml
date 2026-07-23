@@ -25,6 +25,7 @@
         <action id="Got.Send" class="dev.nezzontli.gotvcs.GotSendAction" text="Send (got send)"
                 description="Envía los cambios locales al remoto vía got send">
             <add-to-group group-id="Vcs.Operations.Popup" anchor="last"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift K"/>
         </action>
     </actions>
 </idea-plugin>

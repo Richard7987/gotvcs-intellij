@@ -55,7 +55,7 @@ class GotDiffProvider(
     override fun createFileContent(revisionNumber: VcsRevisionNumber, selectedFile: VirtualFile): ContentRevision? {
         val (workDir, relativePath) = rootAndRelativePath(selectedFile) ?: return null
         val filePath = VcsUtil.getFilePath(selectedFile)
-        return GotContentRevision(filePath, workDir, relativePath, commandLine)
+        return GotContentRevision(filePath, workDir, relativePath, commandLine, revisionNumber)
     }
 
     override fun getLatestCommittedRevision(vcsRoot: VirtualFile): VcsRevisionNumber? =

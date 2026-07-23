@@ -8,7 +8,9 @@ import com.intellij.openapi.vcs.changes.ChangeProvider
 import com.intellij.openapi.vcs.changes.ChangelistBuilder
 import com.intellij.openapi.vcs.changes.CurrentContentRevision
 import com.intellij.openapi.vcs.changes.LocallyDeletedChange
+import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vcs.changes.VcsDirtyScope
+import com.intellij.openapi.vcs.history.VcsRevisionNumber
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.vcsUtil.VcsUtil
 import java.io.File
@@ -24,6 +26,15 @@ class GotChangeProvider(private val commandLine: GotCommandLineWrapper) : Change
         for (root in dirtyScope.affectedContentRoots) {
             val workDir = File(root.path)
             val entries = commandLine.status(workDir)
+            if (entries.isEmpty()) continue
+
+            // Resuelto una vez por raíz (fuera del EDT): GotContentRevision no
+            // puede recalcularlo perezosamente, ver su comentario de clase.
+            val baseRevision: VcsRevisionNumber = try {
+                GotRevisionNumber(commandLine.baseCommit(workDir))
+            } catch (e: VcsException) {
+                VcsRevisionNumber.NULL
+            }
 
             for (entry in entries) {
                 val absoluteFile = File(workDir, entry.path)
@@ -36,7 +47,7 @@ class GotChangeProvider(private val commandLine: GotCommandLineWrapper) : Change
 
                     'M', 'm', 'C' -> {
                         val status = if (entry.code == 'C') FileStatus.MERGED_WITH_CONFLICTS else FileStatus.MODIFIED
-                        val before = GotContentRevision(filePath, workDir, entry.path, commandLine)
+                        val before = GotContentRevision(filePath, workDir, entry.path, commandLine, baseRevision)
                         val after = CurrentContentRevision(filePath)
                         builder.processChange(Change(before, after, status), GotVcs.getKey())
                     }
@@ -47,7 +58,7 @@ class GotChangeProvider(private val commandLine: GotCommandLineWrapper) : Change
                     }
 
                     'D' -> {
-                        val before = GotContentRevision(filePath, workDir, entry.path, commandLine)
+                        val before = GotContentRevision(filePath, workDir, entry.path, commandLine, baseRevision)
                         builder.processChange(Change(before, null, FileStatus.DELETED), GotVcs.getKey())
                     }
 

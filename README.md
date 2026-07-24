@@ -1,5 +1,11 @@
 # Got — IntelliJ VCS Integration for Game of Trees
 
+[![Release](https://github.com/Richard7987/gotvcs-intellij/actions/workflows/release.yml/badge.svg)](https://github.com/Richard7987/gotvcs-intellij/actions/workflows/release.yml)
+[![Latest release](https://img.shields.io/github/v/release/Richard7987/gotvcs-intellij)](https://github.com/Richard7987/gotvcs-intellij/releases/latest)
+[![License: GPLv3](https://img.shields.io/github/license/Richard7987/gotvcs-intellij)](LICENSE)
+[![JetBrains Marketplace version](https://img.shields.io/jetbrains/plugin/v/33099)](https://plugins.jetbrains.com/plugin/33099-got)
+[![JetBrains Marketplace downloads](https://img.shields.io/jetbrains/plugin/d/33099)](https://plugins.jetbrains.com/plugin/33099-got)
+
 Native version control support for [Game of Trees](https://gameoftrees.org/)
 (`got`) in IntelliJ-based IDEs: the same file status, diff, commit, history,
 and update/push workflow you get with Git, backed by the `got` CLI.

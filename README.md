@@ -29,17 +29,17 @@ There's no daemon and no cached repository model: every action shells out to
 the `got` binary for the relevant work tree and adapts its output to the
 corresponding IntelliJ Platform VCS API.
 
-| IntelliJ feature   | got command                       |
-|--------------------|-----------------------------------|
-| VCS root detection | presence of a `.got/` directory   |
-| File status        | `got status`                      |
-| Diff / gutter      | `got cat -c :base`                |
-| Commit             | `got commit -m <message> <paths>` |
-| Rollback           | `got revert -R <paths>`           |
-| History            | `got log`                         |
-| Update Project     | `got fetch` + `got update`        |
-| Branch widget       | `got info` ("work tree branch reference") |
-| Push               | `got send`                        |
+| IntelliJ feature   | got command                               |
+|--------------------|-------------------------------------------|
+| VCS root detection | presence of a `.got/` directory           |
+| File status        | `got status`                              |
+| Diff / gutter      | `got cat -c :base`                        |
+| Commit             | `got commit -m <message> <paths>`         |
+| Rollback           | `got revert -R <paths>`                   |
+| History            | `got log`                                 |
+| Update Project     | `got fetch` + `got update`                |
+| Branch widget      | `got info` ("work tree branch reference") |
+| Push               | `got send`                                |
 
 Source is organized by responsibility under `dev.nezzontli.gotvcs`:
 

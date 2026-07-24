@@ -12,6 +12,14 @@ import dev.nezzontli.gotvcs.GotVcs
 import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
 import java.io.File
 
+/**
+ * getCurrentBranchName()/getCurrentRevision() are called from UI code (the
+ * branch widget, the Push dialog's tree model) that runs on the EDT, so they
+ * cannot shell out to `got info` synchronously (IntelliJ's
+ * OSProcessHandler#checkEdtAndReadAction guard trips on that). State is
+ * read once eagerly and only re-read in update(), which the platform calls
+ * off the EDT during a repository refresh.
+ */
 class GotRepository(
     private val project: Project,
     private val root: VirtualFile,
@@ -21,8 +29,29 @@ class GotRepository(
 
     private var disposed = false
 
+    @Volatile
+    private var branch: String? = null
+
+    @Volatile
+    private var revision: String? = null
+
     init {
         Disposer.register(parentDisposable, this)
+        refreshState()
+    }
+
+    private fun refreshState() {
+        val workDir = File(root.path)
+        branch = try {
+            commandLine.currentBranch(workDir)
+        } catch (e: VcsException) {
+            null
+        }
+        revision = try {
+            commandLine.baseCommit(workDir)
+        } catch (e: VcsException) {
+            null
+        }
     }
 
     override fun getRoot(): VirtualFile = root
@@ -33,23 +62,15 @@ class GotRepository(
 
     override fun getState(): Repository.State = Repository.State.NORMAL
 
-    override fun getCurrentBranchName(): String? = try {
-        commandLine.currentBranch(File(root.path))
-    } catch (e: VcsException) {
-        null
-    }
+    override fun getCurrentBranchName(): String? = branch
 
     override fun getVcs(): AbstractVcs = ProjectLevelVcsManager.getInstance(project).findVcsByName(GotVcs.NAME)!!
 
-    override fun getCurrentRevision(): String? = try {
-        commandLine.baseCommit(File(root.path))
-    } catch (e: VcsException) {
-        null
-    }
+    override fun getCurrentRevision(): String? = revision
 
     override fun isFresh(): Boolean = false
 
-    override fun update() = Unit
+    override fun update() = refreshState()
 
     override fun toLogString(): String = "GotRepository{root=$root}"
 

@@ -1,4 +1,4 @@
-package dev.nezzontli.gotvcs
+package dev.nezzontli.gotvcs.update
 
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.progress.ProgressIndicator
@@ -10,12 +10,13 @@ import com.intellij.openapi.vcs.update.SequentialUpdatesContext
 import com.intellij.openapi.vcs.update.UpdateEnvironment
 import com.intellij.openapi.vcs.update.UpdateSession
 import com.intellij.openapi.vcs.update.UpdatedFiles
+import dev.nezzontli.gotvcs.GotVcs
+import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
 import java.io.File
 
 /**
- * "Update Project" en IntelliJ ejecuta `got fetch` (best-effort: got.conf
- * puede no tener un remoto configurado) seguido de `got update` sobre cada
- * raíz seleccionada.
+ * "Update Project" runs `got fetch` (best-effort: got.conf may not have a
+ * remote configured) followed by `got update` for each selected root.
  */
 class GotUpdateEnvironment(private val commandLine: GotCommandLineWrapper) : UpdateEnvironment {
 

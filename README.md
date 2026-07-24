@@ -1,48 +1,87 @@
-# gotvcs-intellij
+# Got — IntelliJ VCS Integration for Game of Trees
 
-Plugin de IntelliJ que integra [Game of Trees](https://gameoftrees.org/) (`got`)
-como proveedor de control de versiones nativo: detección de work trees `.got/`,
-estado de archivos en el panel de Commit, diffs, historial y commits desde la UI.
+Native version control support for [Game of Trees](https://gameoftrees.org/)
+(`got`) in IntelliJ-based IDEs: the same file status, diff, commit, history,
+and update/push workflow you get with Git, backed by the `got` CLI.
 
-## Estado actual
+## Features
 
-Las 6 fases del plan original: esqueleto del plugin, detección de raíces
-`got`, estado de archivos, diff nativo (gutter de líneas), commit/rollback,
-historial (`got log`) y update/fetch (`got update`/`got fetch`) desde la UI,
-y panel de configuración en *Settings > Version Control > got* (ruta al
-binario `got` y override de `SSH_AUTH_SOCK`). Validado con
-`gradle verifyPlugin` contra IU-261.26222.65 e IU-262.8665.337.
+- Detects `.got/` work trees as a `got` VCS root automatically
+- File status in the Commit tool window (`got status`)
+- Native diff and modified-lines gutter (`got cat` against the base commit)
+- Commit and rollback from the Commit tool window (`got commit`, `got revert`)
+- File history (`got log`) and Update Project (`got update` / `got fetch`)
+- A **Send** action (`got send`), bound to `Ctrl+Shift+K` by default
+- A Settings panel (*Settings > Version Control > got*) to override the
+  `got` binary path and `SSH_AUTH_SOCK`, for setups where auto-detection
+  doesn't apply
 
-## Build
+## How it works
 
-Requiere JDK 21 y Gradle, provistos por el `flake.nix` de este repo:
+There's no daemon and no cached repository model: every action shells out to
+the `got` binary for the relevant work tree and adapts its output to the
+corresponding IntelliJ Platform VCS API.
+
+| IntelliJ feature         | got command                    |
+|---------------------------|--------------------------------|
+| VCS root detection         | presence of a `.got/` directory |
+| File status                | `got status`                   |
+| Diff / gutter               | `got cat -c :base`              |
+| Commit                     | `got commit -m <message> <paths>` |
+| Rollback                   | `got revert -R <paths>`         |
+| History                    | `got log`                       |
+| Update Project             | `got fetch` + `got update`       |
+| Send                       | `got send`                      |
+
+Source is organized by responsibility under `dev.nezzontli.gotvcs`:
+
+- `cli` — the single wrapper around `got` invocations (`GotCommandLineWrapper`)
+- `changes`, `checkin`, `history`, `update`, `roots` — one package per VCS
+  extension point implemented
+- `settings` — the persisted configuration and its Settings panel
+- `actions` — the `Send` menu action
+
+## Requirements
+
+- IntelliJ IDEA (or another IntelliJ Platform IDE) 2026.1 or newer
+- The `got` binary, either on `PATH` or configured under
+  *Settings > Version Control > got*
+
+## Building
 
 ```
-nix develop -c gradle buildPlugin
+./gradlew buildPlugin
 ```
 
-El ZIP resultante queda en `build/distributions/` y se instala manualmente en
-IntelliJ vía *Settings > Plugins > Install Plugin from Disk*.
+The resulting ZIP is written to `build/distributions/` and can be installed
+via *Settings > Plugins > ⚙ > Install Plugin from Disk*.
 
-Compila contra una instalación local de IntelliJ Ultimate (ver `gradle.properties`,
-clave `ideLocalPath`) en vez de descargar un IDE, ya que un IntelliJ descargado
-por Gradle normalmente no ejecuta en NixOS sin `nix-ld`/FHS.
+By default this downloads a matching IntelliJ IDEA build to compile against.
+To use a local installation instead (faster, no download), set in
+`~/.gradle/gradle.properties` (not part of this repo):
 
-## Tags firmados
-
-Cada build validado se marca con un tag `got` firmado por SSH (mismo esquema
-que `/nixdots`: `got tag` no soporta GPG, solo SSH vía `ssh-keygen -Y sign`).
-
-```
-got tag -S ~/.ssh/yubikey.pub -m "mensaje" nombre-del-tag
-got tag -V nombre-del-tag   # verifica la firma
+```properties
+ideLocalPath=/path/to/your/IntelliJ/installation
 ```
 
-`got.conf` (con `allowed_signers "/home/ale/.ssh/allowed_signers"`) y el propio
-`~/.ssh/allowed_signers` viven fuera del work tree y **no están versionados**.
-En una PC nueva, antes de poder verificar tags (`got tag -V`):
+## Contributing
+
+Issues and pull requests are welcome. Before submitting a change:
 
 ```
-echo "ale_bnes@tuta.com $(cat ~/.ssh/yubikey.pub)" > ~/.ssh/allowed_signers
-echo 'allowed_signers "/home/ale/.ssh/allowed_signers"' > /home/ale/gotvcs-intellij.git/got.conf
+./gradlew buildPlugin verifyPlugin
 ```
+
+`verifyPlugin` checks compatibility against the IDE versions declared by
+`sinceBuild` in `build.gradle.kts` and flags deprecated API usage.
+
+## Releasing
+
+Pushing a `v*` tag triggers `.github/workflows/release.yml`, which builds,
+verifies, creates a GitHub Release with the plugin ZIP attached, and — once
+a `PUBLISH_TOKEN` secret is configured — publishes to the JetBrains
+Marketplace.
+
+## License
+
+[GPLv3](LICENSE).

@@ -1,8 +1,8 @@
-package dev.nezzontli.gotvcs
+package dev.nezzontli.gotvcs.settings
 
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.util.ui.FormBuilder
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -19,8 +19,8 @@ class GotConfigurable : Configurable {
     override fun createComponent(): JComponent {
         val binaryField = TextFieldWithBrowseButton().apply {
             addBrowseFolderListener(
-                "Ruta al binario got",
-                "Vacío para detectarlo automáticamente (/run/current-system/sw/bin/got o PATH)",
+                "got Binary Path",
+                "Leave empty to auto-detect (/run/current-system/sw/bin/got or PATH)",
                 null,
                 FileChooserDescriptorFactory.createSingleFileDescriptor(),
             )
@@ -31,10 +31,10 @@ class GotConfigurable : Configurable {
         sshAuthSockField = sockField
 
         val built = FormBuilder.createFormBuilder()
-            .addLabeledComponent("Binario got:", binaryField)
-            .addTooltip("Vacío para detectarlo automáticamente (/run/current-system/sw/bin/got o PATH)")
+            .addLabeledComponent("got binary:", binaryField)
+            .addTooltip("Leave empty to auto-detect (/run/current-system/sw/bin/got or PATH)")
             .addLabeledComponent("SSH_AUTH_SOCK:", sockField)
-            .addTooltip("Vacío para usar el del proceso de IntelliJ, con fallback a /run/user/<uid>/gnupg/S.gpg-agent.ssh")
+            .addTooltip("Leave empty to use the IDE process's own value, falling back to /run/user/<uid>/gnupg/S.gpg-agent.ssh")
             .addComponentFillVertically(JPanel(), 0)
             .panel
 

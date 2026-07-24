@@ -9,6 +9,13 @@ import com.intellij.openapi.vcs.diff.DiffProvider
 import com.intellij.openapi.vcs.history.VcsHistoryProvider
 import com.intellij.openapi.vcs.rollback.RollbackEnvironment
 import com.intellij.openapi.vcs.update.UpdateEnvironment
+import dev.nezzontli.gotvcs.checkin.GotCheckinEnvironment
+import dev.nezzontli.gotvcs.checkin.GotRollbackEnvironment
+import dev.nezzontli.gotvcs.changes.GotChangeProvider
+import dev.nezzontli.gotvcs.changes.GotDiffProvider
+import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
+import dev.nezzontli.gotvcs.history.GotVcsHistoryProvider
+import dev.nezzontli.gotvcs.update.GotUpdateEnvironment
 
 class GotVcs(project: Project) : AbstractVcs(project, NAME) {
 

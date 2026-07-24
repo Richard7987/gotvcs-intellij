@@ -1,18 +1,20 @@
-package dev.nezzontli.gotvcs
+package dev.nezzontli.gotvcs.changes
 
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.vcs.FileStatus
+import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vcs.changes.ChangeListManagerGate
 import com.intellij.openapi.vcs.changes.ChangeProvider
 import com.intellij.openapi.vcs.changes.ChangelistBuilder
 import com.intellij.openapi.vcs.changes.CurrentContentRevision
 import com.intellij.openapi.vcs.changes.LocallyDeletedChange
-import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vcs.changes.VcsDirtyScope
 import com.intellij.openapi.vcs.history.VcsRevisionNumber
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.vcsUtil.VcsUtil
+import dev.nezzontli.gotvcs.GotVcs
+import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
 import java.io.File
 
 class GotChangeProvider(private val commandLine: GotCommandLineWrapper) : ChangeProvider {
@@ -28,8 +30,8 @@ class GotChangeProvider(private val commandLine: GotCommandLineWrapper) : Change
             val entries = commandLine.status(workDir)
             if (entries.isEmpty()) continue
 
-            // Resuelto una vez por raíz (fuera del EDT): GotContentRevision no
-            // puede recalcularlo perezosamente, ver su comentario de clase.
+            // Resolved once per root, off the EDT: GotContentRevision cannot
+            // recompute it lazily, see its class-level comment.
             val baseRevision: VcsRevisionNumber = try {
                 GotRevisionNumber(commandLine.baseCommit(workDir))
             } catch (e: VcsException) {

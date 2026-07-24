@@ -1,4 +1,4 @@
-package dev.nezzontli.gotvcs
+package dev.nezzontli.gotvcs.settings
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.PersistentStateComponent
@@ -7,10 +7,10 @@ import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
 
 /**
- * Rutas configurables desde Settings > Version Control > got. Vacío ("")
- * significa "usar la detección automática" (ver GotCommandLineWrapper):
- * binario got en /run/current-system/sw/bin/got o PATH, y SSH_AUTH_SOCK de
- * System.getenv() o el socket fijo de gpg-agent.
+ * Configurable paths from Settings > Version Control > got. An empty string
+ * means "use automatic detection" (see GotCommandLineWrapper): the got
+ * binary in /run/current-system/sw/bin/got or PATH, and SSH_AUTH_SOCK from
+ * the environment or the conventional gpg-agent socket path.
  */
 @State(name = "GotVcsSettings", storages = [Storage("gotvcs.xml")])
 class GotSettingsState : PersistentStateComponent<GotSettingsState> {

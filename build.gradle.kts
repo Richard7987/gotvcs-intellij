@@ -14,9 +14,17 @@ repositories {
     }
 }
 
+// Local development can point at an installed IDE (see gradle.properties);
+// CI and other contributors fall back to downloading a matching IDE build.
+val localIdePath = providers.gradleProperty("ideLocalPath").orNull
+
 dependencies {
     intellijPlatform {
-        local(providers.gradleProperty("ideLocalPath").get())
+        if (!localIdePath.isNullOrBlank()) {
+            local(localIdePath)
+        } else {
+            intellijIdea("2026.1.4")
+        }
         bundledModule("com.intellij.modules.vcs")
     }
 }
@@ -28,9 +36,14 @@ intellijPlatform {
         }
 
         changeNotes = """
-            Fase 1 + 2: detección de work trees got y estado de archivos
-            (read-only) en el panel de Commit.
+            Read-only file status, native diff, commit/rollback, history,
+            update/fetch, a Send action, and a Settings panel for the got
+            binary path and SSH_AUTH_SOCK.
         """.trimIndent()
+    }
+
+    publishing {
+        token = providers.environmentVariable("PUBLISH_TOKEN")
     }
 }
 

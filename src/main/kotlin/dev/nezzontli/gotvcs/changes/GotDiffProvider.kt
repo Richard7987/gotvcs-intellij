@@ -1,4 +1,4 @@
-package dev.nezzontli.gotvcs
+package dev.nezzontli.gotvcs.changes
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.FilePath
@@ -11,13 +11,14 @@ import com.intellij.openapi.vcs.history.VcsRevisionNumber
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.vcsUtil.VcsUtil
+import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
 import java.io.File
 
 /**
- * Alimenta el gutter de líneas modificadas y las acciones "Show Diff" a
- * partir del commit base del work tree (`got info` + `got cat -c :base`).
- * Solo compara contra la base actual; comparar contra revisiones históricas
- * arbitrarias queda para la Fase 5 (historial).
+ * Feeds the modified-lines gutter and "Show Diff" actions from the work
+ * tree's base commit (`got info` + `got cat -c :base`). Only compares
+ * against the current base; comparing against arbitrary historical
+ * revisions is out of scope for this provider.
  */
 class GotDiffProvider(
     private val project: Project,

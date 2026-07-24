@@ -1,19 +1,20 @@
-package dev.nezzontli.gotvcs
+package dev.nezzontli.gotvcs.changes
 
 import com.intellij.openapi.vcs.FilePath
 import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vcs.changes.ContentRevision
 import com.intellij.openapi.vcs.history.VcsRevisionNumber
+import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
 import java.io.File
 
 /**
- * Contenido de un archivo en el commit base del work tree, vía `got cat -c :base`.
+ * Content of a file at the work tree's base commit, via `got cat -c :base`.
  *
- * [revisionNumber] debe venir ya resuelto por quien construye esta instancia
- * (fuera del EDT). getRevisionNumber() se llama desde el renderer del árbol
- * de Commit y del título del diff, ambos en el hilo de UI: si esta clase
- * ejecutara `got info` ahí mismo, IntelliJ lo reporta como "Synchronous
- * execution on EDT" (ver OSProcessHandler#checkEdtAndReadAction).
+ * [revisionNumber] must be resolved ahead of time by the caller, off the EDT:
+ * getRevisionNumber() is invoked by the Commit tree renderer and the diff
+ * title, both on the UI thread, and running `got info` there would trip
+ * IntelliJ's "Synchronous execution on EDT" guard
+ * (see OSProcessHandler#checkEdtAndReadAction).
  */
 class GotContentRevision(
     private val filePath: FilePath,

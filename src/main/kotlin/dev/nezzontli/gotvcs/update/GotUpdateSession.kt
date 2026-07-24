@@ -1,4 +1,4 @@
-package dev.nezzontli.gotvcs
+package dev.nezzontli.gotvcs.update
 
 import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vcs.update.UpdateSession

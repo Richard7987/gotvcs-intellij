@@ -1,15 +1,18 @@
-package dev.nezzontli.gotvcs
+package dev.nezzontli.gotvcs.history
 
 import com.intellij.openapi.vcs.RepositoryLocation
 import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vcs.history.VcsFileRevision
 import com.intellij.openapi.vcs.history.VcsRevisionNumber
+import dev.nezzontli.gotvcs.changes.GotRevisionNumber
+import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
+import dev.nezzontli.gotvcs.cli.GotLogEntry
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/** Una entrada de `got log` adaptada al modelo de historial de IntelliJ. */
+/** A single `got log` entry adapted to IntelliJ's history model. */
 class GotFileRevision(
     private val workDir: File,
     private val relativePath: String,
@@ -17,7 +20,7 @@ class GotFileRevision(
     private val entry: GotLogEntry,
 ) : VcsFileRevision {
 
-    // Formato real de `got log`: "Thu Jul 23 05:30:12 2026 UTC".
+    // `got log` date format, e.g. "Thu Jul 23 05:30:12 2026 UTC".
     private val dateFormat = SimpleDateFormat("EEE MMM d HH:mm:ss yyyy zzz", Locale.US)
 
     override fun getRevisionNumber(): VcsRevisionNumber = GotRevisionNumber(entry.commitId)

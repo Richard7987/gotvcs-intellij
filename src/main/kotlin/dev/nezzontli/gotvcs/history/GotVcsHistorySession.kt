@@ -1,4 +1,4 @@
-package dev.nezzontli.gotvcs
+package dev.nezzontli.gotvcs.history
 
 import com.intellij.openapi.vcs.history.VcsAbstractHistorySession
 import com.intellij.openapi.vcs.history.VcsFileRevision

@@ -1,4 +1,4 @@
-package dev.nezzontli.gotvcs
+package dev.nezzontli.gotvcs.actions
 
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
@@ -11,15 +11,17 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vfs.VirtualFile
+import dev.nezzontli.gotvcs.GotVcs
+import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
 import java.io.File
 
 /**
- * Acción simple de menú para "got send" (el equivalente a "push"). No usa el
- * diálogo nativo de Push de IntelliJ (Ctrl+Shift+K): eso requiere un
- * PushSupport respaldado por Repository/RepositoryManager completos, similar
- * en tamaño a todo lo demás de este plugin junto. Un botón que corre
- * `got send` y reporta el resultado cubre el caso de uso real sin esa
- * complejidad.
+ * Simple menu action for `got send` (the equivalent of "push"). This does
+ * not hook into IntelliJ's native Push dialog (Ctrl+Shift+K): that requires
+ * a PushSupport backed by a full Repository/RepositoryManager model,
+ * comparable in size to the rest of this plugin combined. A single action
+ * that runs `got send` and reports the result covers the real use case
+ * without that complexity.
  */
 class GotSendAction : AnAction() {
 
@@ -45,10 +47,10 @@ class GotSendAction : AnAction() {
                 }
                 val group = NotificationGroupManager.getInstance().getNotificationGroup("got")
                 if (errors.isEmpty()) {
-                    group.createNotification("got send: cambios enviados correctamente", NotificationType.INFORMATION)
+                    group.createNotification("got send: changes sent successfully", NotificationType.INFORMATION)
                         .notify(project)
                 } else {
-                    group.createNotification("got send falló", errors.joinToString("\n"), NotificationType.ERROR)
+                    group.createNotification("got send failed", errors.joinToString("\n"), NotificationType.ERROR)
                         .notify(project)
                 }
             }

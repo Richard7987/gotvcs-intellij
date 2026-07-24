@@ -1,8 +1,8 @@
-package dev.nezzontli.gotvcs
+package dev.nezzontli.gotvcs.changes
 
 import com.intellij.openapi.vcs.history.VcsRevisionNumber
 
-/** Identifica el commit base de un work tree got (hash resuelto vía `got info`). */
+/** Identifies a got work tree's base commit (resolved via `got info`). */
 data class GotRevisionNumber(private val commitId: String) : VcsRevisionNumber {
 
     override fun asString(): String = commitId.take(12)

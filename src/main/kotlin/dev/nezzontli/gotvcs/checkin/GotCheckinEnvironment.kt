@@ -1,4 +1,4 @@
-package dev.nezzontli.gotvcs
+package dev.nezzontli.gotvcs.checkin
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.FilePath
@@ -9,13 +9,13 @@ import com.intellij.openapi.vcs.changes.CommitContext
 import com.intellij.openapi.vcs.checkin.CheckinEnvironment
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
 import java.io.File
 
 /**
- * got no tiene un índice/staging equivalente al de git en el flujo normal
- * (aparte de `got stage`, que no usamos aquí): en vez de eso, se commitean
- * exactamente los paths seleccionados por el usuario en el panel de Commit,
- * vía `got commit -m msg <paths>`. Ver got(1), sección commit.
+ * got has no git-style staging index (aside from `got stage`, which this
+ * plugin does not use): instead, exactly the paths selected in the Commit
+ * panel are committed via `got commit -m msg <paths>`.
  */
 class GotCheckinEnvironment(
     private val project: Project,
@@ -28,12 +28,11 @@ class GotCheckinEnvironment(
 
     override fun isRefreshAfterCommitNeeded(): Boolean = true
 
-    // CheckinEnvironment.commit() tiene 3 sobrecargas con implementación
-    // default: 2-args -> delega en la de CommitContext -> delega en la de
-    // NullableFunction -> devuelve null (no-op). La plataforma invoca
-    // directamente la de CommitContext, no la de 2 args -- si solo se
-    // sobreescribe esta última, el commit real nunca corre y el IDE igual
-    // reporta éxito (verificado en vivo con javap -c sobre la interfaz).
+    // CheckinEnvironment.commit() has three overloads with default bodies
+    // that delegate 2-args -> CommitContext -> NullableFunction, the last of
+    // which is a no-op. The platform calls the CommitContext overload
+    // directly rather than the 2-arg one, so both must be overridden or the
+    // commit silently never runs while the IDE still reports success.
     override fun commit(changes: MutableList<out Change>, commitMessage: String): MutableList<VcsException> =
         doCommit(changes, commitMessage)
 

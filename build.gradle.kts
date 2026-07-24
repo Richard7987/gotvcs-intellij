@@ -30,6 +30,8 @@ dependencies {
         // classes live here, not under com.intellij.modules.vcs.
         bundledModule("intellij.platform.vcs.dvcs")
         bundledModule("intellij.platform.vcs.dvcs.impl")
+        // Referenced by OutgoingResult's commit list type (com.intellij.dvcs.push).
+        bundledModule("intellij.platform.vcs.log")
     }
 }
 
@@ -40,9 +42,9 @@ intellijPlatform {
         }
 
         changeNotes = """
-            Read-only file status, native diff, commit/rollback, history,
-            update/fetch, a Send action, and a Settings panel for the got
-            binary path and SSH_AUTH_SOCK.
+            File status, native diff, commit/rollback, history, update/fetch,
+            a branch-name widget, the native Push dialog, and a Settings
+            panel for the got binary path and SSH_AUTH_SOCK.
         """.trimIndent()
     }
 

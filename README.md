@@ -17,7 +17,8 @@ and update/push workflow you get with Git, backed by the `got` CLI.
 - Native diff and modified-lines gutter (`got cat` against the base commit)
 - Commit and rollback from the Commit tool window (`got commit`, `got revert`)
 - File history (`got log`) and Update Project (`got update` / `got fetch`)
-- A **Send** action (`got send`), bound to `Ctrl+Shift+K` by default
+- Current branch name shown in the main toolbar, and the native Push dialog
+  (`Ctrl+Shift+K`) for `got send`
 - A Settings panel (*Settings > Version Control > got*) to override the
   `got` binary path and `SSH_AUTH_SOCK`, for setups where auto-detection
   doesn't apply
@@ -37,15 +38,17 @@ corresponding IntelliJ Platform VCS API.
 | Rollback           | `got revert -R <paths>`           |
 | History            | `got log`                         |
 | Update Project     | `got fetch` + `got update`        |
-| Send               | `got send`                        |
+| Branch widget       | `got info` ("work tree branch reference") |
+| Push               | `got send`                        |
 
 Source is organized by responsibility under `dev.nezzontli.gotvcs`:
 
 - `cli` — the single wrapper around `got` invocations (`GotCommandLineWrapper`)
 - `changes`, `checkin`, `history`, `update`, `roots` — one package per VCS
   extension point implemented
+- `repo` — the `Repository` model and the branch-name status bar widget
+- `push` — native Push dialog support (`PushSupport` and friends)
 - `settings` — the persisted configuration and its Settings panel
-- `actions` — the `Send` menu action
 
 ## Requirements
 

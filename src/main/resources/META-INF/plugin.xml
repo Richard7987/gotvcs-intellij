@@ -9,7 +9,8 @@
             <li>File status, native diff, and modified-lines gutter</li>
             <li>Commit and rollback from the Commit tool window</li>
             <li>File history and Update Project (got update / got fetch)</li>
-            <li>Send action (got send) and a Settings panel for the got binary path</li>
+            <li>Branch name widget and native Push dialog (Ctrl+Shift+K)</li>
+            <li>Settings panel for the got binary path and SSH_AUTH_SOCK</li>
         </ul>
         See the <a href="https://github.com/Richard7987/gotvcs-intellij">README</a> for details on how each feature maps to the underlying got command.
     ]]></description>
@@ -30,13 +31,6 @@
         <statusBarWidgetFactory id="got.branch.widget"
                                  implementation="dev.nezzontli.gotvcs.repo.GotBranchWidget$Factory"
                                  order="after CodeStyleStatusBarWidget"/>
+        <pushSupport implementation="dev.nezzontli.gotvcs.push.GotPushSupport"/>
     </extensions>
-
-    <actions>
-        <action id="Got.Send" class="dev.nezzontli.gotvcs.actions.GotSendAction" text="Send (got send)"
-                description="Sends local changes to the remote via got send">
-            <add-to-group group-id="Vcs.Operations.Popup" anchor="last"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="ctrl shift K"/>
-        </action>
-    </actions>
 </idea-plugin>

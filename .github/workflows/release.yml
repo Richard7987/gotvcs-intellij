@@ -5,9 +5,14 @@ on:
     tags:
       - "v*"
   # Manual fallback: mirrored pushes (e.g. Forgejo -> GitHub) don't always
-  # emit the `push` event Actions listens for. Run this against the tag you
-  # want to release from the "Run workflow" dropdown.
+  # emit the `push` event Actions listens for. Always run this from the
+  # "main" branch (so this trigger definition is present) and provide the
+  # tag to release as an input; it does not need to pre-date the tag itself.
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v0.1.0)"
+        required: true
 
 permissions:
   contents: write
@@ -18,9 +23,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -40,10 +48,8 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
-          # softprops/action-gh-release only infers the tag automatically on
-          # a real `push` tag event; workflow_dispatch runs need it explicit.
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: ${{ env.RELEASE_TAG }}
           generate_release_notes: true
           files: build/distributions/*.zip
 

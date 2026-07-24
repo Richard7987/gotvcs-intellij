@@ -19,10 +19,10 @@ class GotConfigurable : Configurable {
     override fun createComponent(): JComponent {
         val binaryField = TextFieldWithBrowseButton().apply {
             addBrowseFolderListener(
-                "got Binary Path",
-                "Leave empty to auto-detect (/run/current-system/sw/bin/got or PATH)",
                 null,
-                FileChooserDescriptorFactory.createSingleFileDescriptor(),
+                FileChooserDescriptorFactory.singleFile()
+                    .withTitle("got Binary Path")
+                    .withDescription("Leave empty to auto-detect (/run/current-system/sw/bin/got or PATH)"),
             )
         }
         val sockField = JTextField()

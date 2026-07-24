@@ -10,7 +10,10 @@ import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vfs.VirtualFile
 import dev.nezzontli.gotvcs.GotVcs
 import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
+import dev.nezzontli.gotvcs.cli.GotLogEntry
 import java.io.File
+
+private const val RECENT_LOG_SIZE = 15
 
 /**
  * getCurrentBranchName()/getCurrentRevision() are called from UI code (the
@@ -35,6 +38,9 @@ class GotRepository(
     @Volatile
     private var revision: String? = null
 
+    @Volatile
+    private var recentLog: List<GotLogEntry> = emptyList()
+
     init {
         Disposer.register(parentDisposable, this)
         refreshState()
@@ -52,7 +58,15 @@ class GotRepository(
         } catch (e: VcsException) {
             null
         }
+        recentLog = try {
+            commandLine.log(workDir, null, RECENT_LOG_SIZE)
+        } catch (e: VcsException) {
+            emptyList()
+        }
     }
+
+    /** Precomputed off-EDT (see class doc); safe for the branch widget's click popup to read directly. */
+    fun getRecentLog(): List<GotLogEntry> = recentLog
 
     override fun getRoot(): VirtualFile = root
 

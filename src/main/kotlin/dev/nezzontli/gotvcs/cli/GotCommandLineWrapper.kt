@@ -88,6 +88,15 @@ class GotCommandLineWrapper {
         return line.substringAfter("work tree base commit:").trim()
     }
 
+    /** Current branch name (e.g. "main"), parsed from `got info`'s "work tree branch reference" line. */
+    @Throws(VcsException::class)
+    fun currentBranch(workDir: File): String? {
+        val output = run(workDir, "info")
+        val line = output.lineSequence().firstOrNull { it.trimStart().startsWith("work tree branch reference:") }
+            ?: return null
+        return line.substringAfter("work tree branch reference:").trim().removePrefix("refs/heads/")
+    }
+
     @Throws(VcsException::class)
     fun commit(workDir: File, message: String, paths: List<String>) {
         if (paths.isEmpty()) return

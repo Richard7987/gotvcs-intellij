@@ -26,6 +26,10 @@ dependencies {
             intellijIdea("2026.1.4")
         }
         bundledModule("com.intellij.modules.vcs")
+        // Repository/RepositoryManager and the DVCS status widget base
+        // classes live here, not under com.intellij.modules.vcs.
+        bundledModule("intellij.platform.vcs.dvcs")
+        bundledModule("intellij.platform.vcs.dvcs.impl")
     }
 }
 

@@ -22,9 +22,14 @@
              displayName="got"
              administrativeAreaName=".got"/>
         <vcsRootChecker implementation="dev.nezzontli.gotvcs.roots.GotVcsRootChecker"/>
+        <vcsRepositoryCreator implementation="dev.nezzontli.gotvcs.repo.GotVcsRepositoryCreator"/>
         <applicationService serviceImplementation="dev.nezzontli.gotvcs.settings.GotSettingsState"/>
         <applicationConfigurable instance="dev.nezzontli.gotvcs.settings.GotConfigurable" displayName="got" parentId="vcs"/>
         <notificationGroup id="got" displayType="BALLOON"/>
+        <projectService serviceImplementation="dev.nezzontli.gotvcs.repo.GotRepositoryManager"/>
+        <statusBarWidgetFactory id="got.branch.widget"
+                                 implementation="dev.nezzontli.gotvcs.repo.GotBranchWidget$Factory"
+                                 order="after CodeStyleStatusBarWidget"/>
     </extensions>
 
     <actions>

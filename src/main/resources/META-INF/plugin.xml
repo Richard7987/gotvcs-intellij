@@ -32,5 +32,13 @@
                                  implementation="dev.nezzontli.gotvcs.repo.GotBranchWidget$Factory"
                                  order="after CodeStyleStatusBarWidget"/>
         <pushSupport implementation="dev.nezzontli.gotvcs.push.GotPushSupport"/>
+        <logProvider implementation="dev.nezzontli.gotvcs.log.GotVcsLogProvider"/>
     </extensions>
+
+    <actions>
+        <action id="Got.Commit.And.Send.Executor"
+                class="dev.nezzontli.gotvcs.checkin.GotCommitAndSendExecutorAction">
+            <add-to-group group-id="Vcs.Commit.PrimaryCommitActions"/>
+        </action>
+    </actions>
 </idea-plugin>

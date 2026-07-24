@@ -14,7 +14,7 @@ class GotPusher(private val commandLine: GotCommandLineWrapper) :
     Pusher<GotRepository, GotPushSource, GotPushTarget>() {
 
     override fun push(
-        pushSpecs: MutableMap<GotRepository, PushSpec<GotPushSource, GotPushTarget>>,
+        pushSpecs: Map<GotRepository, PushSpec<GotPushSource, GotPushTarget>>,
         forcePushOptionValue: VcsPushOptionValue?,
         force: Boolean,
     ) {

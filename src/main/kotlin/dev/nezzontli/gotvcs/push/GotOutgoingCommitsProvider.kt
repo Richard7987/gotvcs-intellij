@@ -7,6 +7,7 @@ import com.intellij.dvcs.push.VcsError
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.vcs.VcsException
 import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
+import dev.nezzontli.gotvcs.log.GotFullCommitDetails
 import dev.nezzontli.gotvcs.repo.GotRepository
 import java.io.File
 
@@ -28,16 +29,12 @@ class GotOutgoingCommitsProvider(private val commandLine: GotCommandLineWrapper)
     ): OutgoingResult {
         val workDir = File(repository.root.path)
         val target = pushSpec.target
-        logger.warn("got outgoing commits: workDir=$workDir remote=${target.remoteName} branch=${target.branch}")
         return try {
             val remoteHash = commandLine.remoteBranchHash(workDir, target.remoteName, target.branch)
-            logger.warn("got outgoing commits: remoteHash=$remoteHash")
             val ids = commandLine.outgoingCommitIds(workDir, remoteHash)
-            logger.warn("got outgoing commits: ids=$ids")
             val commits = ids.map { id -> GotFullCommitDetails(commandLine.catCommit(workDir, id), repository.root) }
             OutgoingResult(commits, emptyList())
         } catch (e: VcsException) {
-            logger.warn("got outgoing commits failed", e)
             OutgoingResult(emptyList(), listOf(VcsError(e.message)))
         } catch (e: Exception) {
             logger.error("got outgoing commits failed unexpectedly", e)

@@ -40,8 +40,11 @@ class GotFileRevision(
     override fun getChangedRepositoryPath(): RepositoryLocation? = null
 
     @Throws(VcsException::class)
-    override fun loadContent(): ByteArray = getContent()
+    override fun loadContent(): ByteArray = commandLine.catAt(workDir, entry.commitId, relativePath).toByteArray()
 
+    // VcsFileContent.getContent() has no default body despite being deprecated
+    // in favor of loadContent() -- it must still be implemented.
+    @Suppress("OVERRIDE_DEPRECATION")
     @Throws(VcsException::class)
-    override fun getContent(): ByteArray = commandLine.catAt(workDir, entry.commitId, relativePath).toByteArray()
+    override fun getContent(): ByteArray = loadContent()
 }

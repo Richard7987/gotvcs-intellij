@@ -62,14 +62,8 @@ class GotCheckinEnvironment(
         return exceptions
     }
 
-    /**
-     * GotCommitAndSendExecutor's session is CommitSession.VCS_COMMIT itself
-     * (see that class) so this same, already-correct commit() path runs --
-     * unversioned/deleted files included -- exactly as for the plain
-     * "Commit" button; PUSH_AFTER_COMMIT_KEY just tells us to also open the
-     * Push dialog afterwards. Opening it is a UI action and must happen on
-     * the EDT, unlike commit() itself which may run on a background thread.
-     */
+    // Opening the Push dialog is a UI action and must happen on the EDT,
+    // unlike commit() itself which may run on a background thread.
     private fun openPushDialogAfterCommit(changes: List<Change>) {
         val vcsManager = ProjectLevelVcsManager.getInstance(project)
         val repositoryManager = project.getService(GotRepositoryManager::class.java)
@@ -108,7 +102,6 @@ class GotCheckinEnvironment(
         return exceptions
     }
 
-    /** Marks the affected roots dirty and pings the Log tab's refresher, if one is registered, so neither needs a manual reload after a commit. */
     private fun notifyRootsChanged(filePaths: List<FilePath>) {
         val vcsManager = ProjectLevelVcsManager.getInstance(project)
         val notifier = project.getService(GotVcsRefreshNotifier::class.java)

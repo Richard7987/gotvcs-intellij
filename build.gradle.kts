@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.nezzontli"
-version = "0.1.0"
+version = "0.2.0"
 
 repositories {
     mavenCentral()
@@ -47,9 +47,16 @@ intellijPlatform {
         }
 
         changeNotes = """
-            File status, native diff, commit/rollback, history, update/fetch,
-            a branch-name widget, the native Push dialog, and a Settings
-            panel for the got binary path and SSH_AUTH_SOCK.
+            <ul>
+                <li>A Log tab (commit graph, refs, per-commit changed files)</li>
+                <li>Real outgoing-commit detection in the native Push dialog</li>
+                <li>A "Commit and Send" button that commits and opens Push</li>
+                <li>got recognized as a distributed VCS, enabling the
+                non-modal Commit tool window</li>
+                <li>Automatic refresh of the Commit panel and Log tab after
+                commit/push/update, and after external got changes (e.g. from
+                a terminal)</li>
+            </ul>
         """.trimIndent()
     }
 

@@ -29,14 +29,6 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class GotVcsLogProvider(private val project: Project) : VcsLogProvider {
 
-    // A default-valued second constructor parameter here (as this used to
-    // have, before needing `project` for the refresh notifier) makes Kotlin
-    // emit a single constructor with a synthetic $default bridge, which the
-    // platform's reflective EP instantiation doesn't recognize as "a
-    // (Project) constructor" -- it silently failed to construct this class
-    // at all, which is why the whole Log tab disappeared. Every other
-    // extension point in this plugin avoids this by taking only `project`
-    // and constructing its own GotCommandLineWrapper as a plain field.
     private val commandLine = GotCommandLineWrapper()
 
     override val supportedVcs: VcsKey = GotVcs.getKey()
@@ -44,13 +36,9 @@ class GotVcsLogProvider(private val project: Project) : VcsLogProvider {
     override val referenceManager: VcsLogRefManager = GotVcsLogRefManager()
 
     // getCurrentBranch()/getCurrentUser() are called from EDT-bound UI code
-    // (CurrentBranchHighlighter.update(), on every visible-pack refresh -- and
-    // likely an equivalent "my commits" highlighter for getCurrentUser), so
-    // neither can shell out to `got` synchronously -- same class of bug fixed
-    // earlier for GotRepository/GotBranchWidget. readAllHashes() always runs
-    // off the EDT (it's the Log tab's own background data loading), and
-    // always runs before those highlighters can fire, so precomputing both
-    // here and serving them from cache is safe.
+    // on every visible-pack refresh, so they can't shell out to `got`
+    // synchronously. readAllHashes() always runs off the EDT and before
+    // those callers can fire, so precomputing both here is safe.
     private val currentBranchCache = ConcurrentHashMap<String, String>()
     private val currentUserCache = ConcurrentHashMap<String, VcsUser>()
 

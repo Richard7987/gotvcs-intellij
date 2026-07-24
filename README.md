@@ -16,9 +16,16 @@ and update/push workflow you get with Git, backed by the `got` CLI.
 - File status in the Commit tool window (`got status`)
 - Native diff and modified-lines gutter (`got cat` against the base commit)
 - Commit and rollback from the Commit tool window (`got commit`, `got revert`)
+- A **Commit and Send** button next to the default Commit action: commits
+  and opens the native Push dialog in one step
+- A **Log tab** with the full commit graph, refs (branches/remote
+  branches/tags), and per-commit changed files
 - File history (`got log`) and Update Project (`got update` / `got fetch`)
-- Current branch name shown in the main toolbar, and the native Push dialog
-  (`Ctrl+Shift+K`) for `got send`
+- Current branch name shown in the status bar, and the native Push dialog
+  (`Ctrl+Shift+K`) with real outgoing-commit detection for `got send`
+- Automatic refresh of the Commit panel and Log tab after commit, push, or
+  update — including changes made outside the IDE (e.g. `got commit` in a
+  terminal)
 - A Settings panel (*Settings > Version Control > got*) to override the
   `got` binary path and `SSH_AUTH_SOCK`, for setups where auto-detection
   doesn't apply
@@ -29,17 +36,20 @@ There's no daemon and no cached repository model: every action shells out to
 the `got` binary for the relevant work tree and adapts its output to the
 corresponding IntelliJ Platform VCS API.
 
-| IntelliJ feature   | got command                               |
-|--------------------|-------------------------------------------|
-| VCS root detection | presence of a `.got/` directory           |
-| File status        | `got status`                              |
-| Diff / gutter      | `got cat -c :base`                        |
-| Commit             | `got commit -m <message> <paths>`         |
-| Rollback           | `got revert -R <paths>`                   |
-| History            | `got log`                                 |
-| Update Project     | `got fetch` + `got update`                |
-| Branch widget      | `got info` ("work tree branch reference") |
-| Push               | `got send`                                |
+| IntelliJ feature    | got command                                    |
+|---------------------|-------------------------------------------------|
+| VCS root detection  | presence of a `.got/` directory                 |
+| File status         | `got status`                                    |
+| Diff / gutter       | `got cat -c :base`                              |
+| Commit              | `got commit -m <message> <paths>`               |
+| Rollback            | `got revert -R <paths>`                         |
+| Commit and Send     | `got commit`, then opens the Push dialog         |
+| Log tab             | `got log -b`, `got cat`, `got ref -l`            |
+| History             | `got log`                                       |
+| Update Project      | `got fetch` + `got update`                      |
+| Branch widget       | `got info` ("work tree branch reference")       |
+| Push                | `got send`                                      |
+| Outgoing commits    | `got ref -l` + `got log -x` against the remote  |
 
 Source is organized by responsibility under `dev.nezzontli.gotvcs`:
 
@@ -47,7 +57,10 @@ Source is organized by responsibility under `dev.nezzontli.gotvcs`:
 - `changes`, `checkin`, `history`, `update`, `roots` — one package per VCS
   extension point implemented
 - `repo` — the `Repository` model and the branch-name status bar widget
-- `push` — native Push dialog support (`PushSupport` and friends)
+- `push` — native Push dialog support (`PushSupport` and friends), including
+  outgoing-commit detection
+- `log` — the Log tab (`VcsLogProvider`) and the refresh notifier that keeps
+  it and the Commit panel up to date
 - `settings` — the persisted configuration and its Settings panel
 
 ## Requirements

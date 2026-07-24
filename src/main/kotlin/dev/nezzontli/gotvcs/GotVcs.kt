@@ -34,11 +34,9 @@ class GotVcs(project: Project) : AbstractVcs(project, NAME) {
     override fun getDisplayName(): String = NAME
 
     // got is a distributed VCS (local commits, explicit `got send`), same
-    // shape as Git. The platform only enables its non-modal Commit tool
+    // shape as Git. The platform only enables the non-modal Commit tool
     // window when every active VCS reports VcsType.distributed here --
-    // AbstractVcs.getType() defaults to centralized, which silently forces
-    // the old modal commit dialog and greys out the Commit tool window
-    // entirely (verified via CommitModeManager.canSetNonModal() bytecode).
+    // the default (centralized) forces the old modal commit dialog instead.
     override fun getType(): VcsType = VcsType.distributed
 
     override fun getChangeProvider(): ChangeProvider = changeProvider

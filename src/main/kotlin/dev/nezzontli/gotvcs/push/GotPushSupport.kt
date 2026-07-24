@@ -28,6 +28,16 @@ class GotPushSupport(private val project: Project) : PushSupport<GotRepository, 
         return GotPushTarget("origin", branch)
     }
 
+    /**
+     * PushSupport's two-arg overload has a *non-abstract* default body that
+     * always returns null (unlike the one-arg version, which is abstract) --
+     * the platform calls this one, not the one-arg override above, so
+     * without this it silently marks every repo model with an "empty
+     * target" error and skips loading outgoing commits entirely.
+     */
+    override fun getDefaultTarget(repository: GotRepository, source: GotPushSource): GotPushTarget? =
+        getDefaultTarget(repository)
+
     override fun getSource(repository: GotRepository): GotPushSource =
         GotPushSource(repository.currentBranchName ?: "")
 

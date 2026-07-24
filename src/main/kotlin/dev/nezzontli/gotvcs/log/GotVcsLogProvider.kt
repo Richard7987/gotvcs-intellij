@@ -27,10 +27,17 @@ import java.util.concurrent.ConcurrentHashMap
  * index/cache beyond GotCommandLineWrapper's in-memory commit cache) -- same
  * philosophy as the rest of this plugin: no daemon, no persisted state.
  */
-class GotVcsLogProvider(
-    private val project: Project,
-    private val commandLine: GotCommandLineWrapper = GotCommandLineWrapper(),
-) : VcsLogProvider {
+class GotVcsLogProvider(private val project: Project) : VcsLogProvider {
+
+    // A default-valued second constructor parameter here (as this used to
+    // have, before needing `project` for the refresh notifier) makes Kotlin
+    // emit a single constructor with a synthetic $default bridge, which the
+    // platform's reflective EP instantiation doesn't recognize as "a
+    // (Project) constructor" -- it silently failed to construct this class
+    // at all, which is why the whole Log tab disappeared. Every other
+    // extension point in this plugin avoids this by taking only `project`
+    // and constructing its own GotCommandLineWrapper as a plain field.
+    private val commandLine = GotCommandLineWrapper()
 
     override val supportedVcs: VcsKey = GotVcs.getKey()
 

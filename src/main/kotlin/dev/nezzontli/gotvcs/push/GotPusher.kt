@@ -7,6 +7,7 @@ import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.vcs.VcsException
 import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
+import dev.nezzontli.gotvcs.log.GotVcsRefreshNotifier
 import dev.nezzontli.gotvcs.repo.GotRepository
 import java.io.File
 
@@ -22,6 +23,9 @@ class GotPusher(private val commandLine: GotCommandLineWrapper) :
         for (repository in pushSpecs.keys) {
             try {
                 commandLine.send(File(repository.root.path))
+                // origin/<branch> moves after a successful send, which affects
+                // the Log tab's ref labels and outgoing-commits view.
+                repository.project.getService(GotVcsRefreshNotifier::class.java).notifyChanged(repository.root)
             } catch (e: VcsException) {
                 errors.add("${repository.root.path}: ${e.message}")
             }

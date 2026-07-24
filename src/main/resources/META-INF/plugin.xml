@@ -28,6 +28,7 @@
         <applicationConfigurable instance="dev.nezzontli.gotvcs.settings.GotConfigurable" displayName="got" parentId="vcs"/>
         <notificationGroup id="got" displayType="BALLOON"/>
         <projectService serviceImplementation="dev.nezzontli.gotvcs.repo.GotRepositoryManager"/>
+        <projectService serviceImplementation="dev.nezzontli.gotvcs.log.GotVcsRefreshNotifier"/>
         <statusBarWidgetFactory id="got.branch.widget"
                                  implementation="dev.nezzontli.gotvcs.repo.GotBranchWidget$Factory"
                                  order="after CodeStyleStatusBarWidget"/>

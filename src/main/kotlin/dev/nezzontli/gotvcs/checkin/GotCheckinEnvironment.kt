@@ -18,6 +18,7 @@ import com.intellij.openapi.vcs.checkin.CheckinEnvironment
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
+import dev.nezzontli.gotvcs.log.GotVcsRefreshNotifier
 import dev.nezzontli.gotvcs.repo.GotRepositoryManager
 import java.io.File
 
@@ -103,7 +104,15 @@ class GotCheckinEnvironment(
                 exceptions.add(e)
             }
         }
+        notifyRootsChanged(filePaths)
         return exceptions
+    }
+
+    /** Marks the affected roots dirty and pings the Log tab's refresher, if one is registered, so neither needs a manual reload after a commit. */
+    private fun notifyRootsChanged(filePaths: List<FilePath>) {
+        val vcsManager = ProjectLevelVcsManager.getInstance(project)
+        val notifier = project.getService(GotVcsRefreshNotifier::class.java)
+        filePaths.mapNotNull { vcsManager.getVcsRootFor(it) }.toSet().forEach { notifier.notifyChanged(it) }
     }
 
     override fun scheduleMissingFileForDeletion(files: MutableList<out FilePath>): MutableList<VcsException> {

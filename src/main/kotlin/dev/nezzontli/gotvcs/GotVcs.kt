@@ -28,7 +28,7 @@ class GotVcs(project: Project) : AbstractVcs(project, NAME) {
     private val checkinEnvironment = GotCheckinEnvironment(project, commandLine)
     private val rollbackEnvironment = GotRollbackEnvironment(project, commandLine)
     private val historyProvider = GotVcsHistoryProvider(project, commandLine)
-    private val updateEnvironment = GotUpdateEnvironment(commandLine)
+    private val updateEnvironment = GotUpdateEnvironment(project, commandLine)
     private val commitAndSendExecutor = GotCommitAndSendExecutor()
 
     override fun getDisplayName(): String = NAME

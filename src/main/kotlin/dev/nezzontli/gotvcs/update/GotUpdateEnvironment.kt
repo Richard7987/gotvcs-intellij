@@ -2,6 +2,7 @@ package dev.nezzontli.gotvcs.update
 
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Ref
 import com.intellij.openapi.vcs.FilePath
 import com.intellij.openapi.vcs.VcsException
@@ -12,13 +13,17 @@ import com.intellij.openapi.vcs.update.UpdateSession
 import com.intellij.openapi.vcs.update.UpdatedFiles
 import dev.nezzontli.gotvcs.GotVcs
 import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
+import dev.nezzontli.gotvcs.log.GotVcsRefreshNotifier
 import java.io.File
 
 /**
  * "Update Project" runs `got fetch` (best-effort: got.conf may not have a
  * remote configured) followed by `got update` for each selected root.
  */
-class GotUpdateEnvironment(private val commandLine: GotCommandLineWrapper) : UpdateEnvironment {
+class GotUpdateEnvironment(
+    private val project: Project,
+    private val commandLine: GotCommandLineWrapper,
+) : UpdateEnvironment {
 
     override fun fillGroups(updatedFiles: UpdatedFiles) = Unit
 
@@ -29,9 +34,10 @@ class GotUpdateEnvironment(private val commandLine: GotCommandLineWrapper) : Upd
         context: Ref<SequentialUpdatesContext>,
     ): UpdateSession {
         val exceptions = mutableListOf<VcsException>()
-        val workDirs = contentRoots.map { File(it.path) }.distinct()
+        val roots = contentRoots.distinctBy { it.path }
 
-        for (workDir in workDirs) {
+        for (root in roots) {
+            val workDir = File(root.path)
             try {
                 commandLine.fetch(workDir)
             } catch (e: VcsException) {
@@ -56,6 +62,10 @@ class GotUpdateEnvironment(private val commandLine: GotCommandLineWrapper) : Upd
             } catch (e: VcsException) {
                 exceptions.add(e)
             }
+
+            // New commits may have just been pulled in by `got update`, so
+            // both the Commit panel and the Log tab need to know.
+            root.virtualFile?.let { project.getService(GotVcsRefreshNotifier::class.java).notifyChanged(it) }
         }
 
         return GotUpdateSession(exceptions)

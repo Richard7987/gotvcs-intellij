@@ -1,6 +1,7 @@
 package dev.nezzontli.gotvcs.log
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vcs.VcsKey
 import com.intellij.openapi.vcs.changes.Change
@@ -26,7 +27,10 @@ import java.util.concurrent.ConcurrentHashMap
  * index/cache beyond GotCommandLineWrapper's in-memory commit cache) -- same
  * philosophy as the rest of this plugin: no daemon, no persisted state.
  */
-class GotVcsLogProvider(private val commandLine: GotCommandLineWrapper = GotCommandLineWrapper()) : VcsLogProvider {
+class GotVcsLogProvider(
+    private val project: Project,
+    private val commandLine: GotCommandLineWrapper = GotCommandLineWrapper(),
+) : VcsLogProvider {
 
     override val supportedVcs: VcsKey = GotVcs.getKey()
 
@@ -146,7 +150,17 @@ class GotVcsLogProvider(private val commandLine: GotCommandLineWrapper = GotComm
     override fun subscribeToRootRefreshEvents(
         roots: Collection<VirtualFile>,
         refresher: com.intellij.vcs.log.VcsLogRefresher,
-    ): Disposable = Disposable { }
+    ): Disposable {
+        val notifier = project.getService(GotVcsRefreshNotifier::class.java)
+        for (root in roots) {
+            notifier.registerLogRefresher(root, refresher)
+        }
+        return Disposable {
+            for (root in roots) {
+                notifier.unregisterLogRefresher(root)
+            }
+        }
+    }
 
     private class SimpleLogData(
         override val refs: Set<VcsRef>,

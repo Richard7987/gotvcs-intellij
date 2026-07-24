@@ -7,6 +7,7 @@ import com.intellij.openapi.vcs.VcsException
 import dev.nezzontli.gotvcs.settings.GotSettingsState
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.ConcurrentHashMap
 
 data class GotStatusEntry(val code: Char, val stagedCode: Char, val path: String)
 
@@ -23,6 +24,10 @@ data class GotCommitObject(
     val authorTimestamp: Long,
     val message: String,
 )
+
+data class GotChangedPath(val code: Char, val path: String)
+
+data class GotRefEntry(val name: String, val hash: String, val isTag: Boolean, val isRemote: Boolean)
 
 /**
  * Central entry point for every invocation of the `got` binary. The binary
@@ -224,9 +229,14 @@ class GotCommandLineWrapper {
 
     private val commitAuthorPattern = Regex("""^(.*)\s+<(.+)>\s+(\d+)\s+[+-]\d{4}$""")
 
+    // Commit objects are immutable once created, so caching by id is always safe.
+    private val commitCache = ConcurrentHashMap<String, GotCommitObject>()
+
     /** Parses the raw commit object printed by `got cat <commit-id>` (tree/parent/author/committer/message). */
     @Throws(VcsException::class)
     fun catCommit(workDir: File, commitId: String): GotCommitObject {
+        commitCache[commitId]?.let { return it }
+
         val lines = run(workDir, "cat", commitId).lines()
         val parents = mutableListOf<String>()
         var authorName = ""
@@ -249,6 +259,61 @@ class GotCommandLineWrapper {
         }
 
         val message = if (messageStart in lines.indices) lines.drop(messageStart).joinToString("\n").trimEnd('\n') else ""
-        return GotCommitObject(commitId, parents, authorName, authorEmail, authorTimestamp, message)
+        val commitObject = GotCommitObject(commitId, parents, authorName, authorEmail, authorTimestamp, message)
+        commitCache[commitId] = commitObject
+        return commitObject
+    }
+
+    /**
+     * Full commit-ID history reachable from the work tree's current branch,
+     * most recent first, including commits merged in from other branches
+     * (`-b`; without it `got log` only shows the linear mainline). Parent
+     * hashes (needed for the Log tab's graph, including real merges with
+     * more than one parent) come from [catCommit], not from this bulk
+     * listing -- `got log` never prints them.
+     */
+    @Throws(VcsException::class)
+    fun allCommitIds(workDir: File): List<String> {
+        val output = run(workDir, "log", "-b")
+        return output.lineSequence()
+            .filter { it.startsWith("commit ") }
+            .map { it.removePrefix("commit ").trim().substringBefore(' ') }
+            .toList()
+    }
+
+    /** Changed-file list for a single commit, via `got log -P` scoped to one commit. */
+    @Throws(VcsException::class)
+    fun changedPaths(workDir: File, commitId: String): List<GotChangedPath> {
+        val output = run(workDir, "log", "-c", commitId, "-l", "1", "-P")
+        return output.lineSequence()
+            .filter { it.length >= 4 && it[0] == ' ' && it[1] in "MDAm" && it[2] == ' ' && it[3] == ' ' }
+            .map { line -> GotChangedPath(line[1], line.substring(4)) }
+            .toList()
+    }
+
+    private val hexHashPattern = Regex("^[0-9a-f]{40}$")
+
+    /**
+     * All refs known to the repository, via `got ref -l`. Filters out
+     * symbolic pointers (e.g. `HEAD: refs/heads/main`, whose value is a ref
+     * name, not a hash) and got's internal work-tree bookkeeping refs.
+     */
+    @Throws(VcsException::class)
+    fun refs(workDir: File): List<GotRefEntry> {
+        val output = run(workDir, "ref", "-l")
+        val entries = mutableListOf<GotRefEntry>()
+        for (line in output.lineSequence()) {
+            val colon = line.indexOf(':')
+            if (colon < 0) continue
+            val name = line.substring(0, colon).trim()
+            val value = line.substring(colon + 1).trim()
+            if (!hexHashPattern.matches(value)) continue
+            when {
+                name.startsWith("refs/heads/") -> entries.add(GotRefEntry(name.removePrefix("refs/heads/"), value, isTag = false, isRemote = false))
+                name.startsWith("refs/tags/") -> entries.add(GotRefEntry(name.removePrefix("refs/tags/"), value, isTag = true, isRemote = false))
+                name.startsWith("refs/remotes/") -> entries.add(GotRefEntry(name.removePrefix("refs/remotes/"), value, isTag = false, isRemote = true))
+            }
+        }
+        return entries
     }
 }

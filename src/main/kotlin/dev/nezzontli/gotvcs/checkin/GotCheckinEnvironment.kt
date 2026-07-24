@@ -43,9 +43,21 @@ class GotCheckinEnvironment(
         feedback: MutableSet<in String>,
     ): MutableList<VcsException> = doCommit(changes, commitMessage)
 
-    private fun doCommit(changes: List<Change>, commitMessage: String): MutableList<VcsException> {
+    private fun doCommit(changes: List<Change>, commitMessage: String): MutableList<VcsException> =
+        commitFilePaths(changes.mapNotNull { it.afterRevision?.file ?: it.beforeRevision?.file }, commitMessage)
+
+    /**
+     * Exposed for GotCommitAndSendExecutor: unlike the default "Commit"
+     * button (a VCS_COMMIT session, for which the platform automatically
+     * calls scheduleUnversionedFilesForAddition()/scheduleMissingFileForDeletion()
+     * before committing), a custom CommitExecutor's session is on its own
+     * for that -- confirmed by decompiling ChangesViewCommitWorkflowHandler,
+     * whose addUnversionedFiles() is a no-op unless CommitSessionInfo.isVcsCommit()
+     * is true. This lets that caller commit an explicit path list (tracked
+     * changes plus whatever it scheduled for add/deletion itself) in one go.
+     */
+    fun commitFilePaths(filePaths: List<FilePath>, commitMessage: String): MutableList<VcsException> {
         val exceptions = mutableListOf<VcsException>()
-        val filePaths = changes.mapNotNull { it.afterRevision?.file ?: it.beforeRevision?.file }
         for ((workDir, paths) in groupByRoot(filePaths)) {
             try {
                 commandLine.commit(workDir, commitMessage, paths)

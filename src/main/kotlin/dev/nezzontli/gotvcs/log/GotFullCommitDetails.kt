@@ -1,4 +1,4 @@
-package dev.nezzontli.gotvcs.push
+package dev.nezzontli.gotvcs.log
 
 import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vfs.VirtualFile
@@ -11,14 +11,17 @@ import dev.nezzontli.gotvcs.cli.GotCommitObject
 
 /**
  * Adapts a [GotCommitObject] (parsed from `got cat <commit-id>`) to the
- * Push dialog's outgoing-commits list. got has no per-file change list
- * cheaply available for an arbitrary historical commit here, so
- * [getChanges] is empty; the dialog only needs id/author/message/parents
- * to render its commit list.
+ * platform's commit-details model, shared by the Push dialog's
+ * outgoing-commits preview (no [changes] needed there) and the Log tab
+ * (which populates [changes] from `got log -P`). [getChanges] returns the
+ * same flat list regardless of [parent] index -- got's `-P` output diffs
+ * against the immediate history parent, so this isn't fully merge-aware
+ * for commits with more than one parent, but is correct for the common case.
  */
 class GotFullCommitDetails(
     private val commitObject: GotCommitObject,
     private val root: VirtualFile,
+    private val changes: List<Change> = emptyList(),
 ) : VcsFullCommitDetails {
 
     private val hash: Hash = HashImpl.build(commitObject.commitId)
@@ -34,6 +37,6 @@ class GotFullCommitDetails(
     override fun getAuthorTime(): Long = commitObject.authorTimestamp * 1000L
     override fun getCommitTime(): Long = commitObject.authorTimestamp * 1000L
     override fun getFullMessage(): String = commitObject.message
-    override fun getChanges(): Collection<Change> = emptyList()
-    override fun getChanges(parent: Int): Collection<Change> = emptyList()
+    override fun getChanges(): Collection<Change> = changes
+    override fun getChanges(parent: Int): Collection<Change> = changes
 }

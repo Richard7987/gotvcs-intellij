@@ -40,6 +40,9 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          # softprops/action-gh-release only infers the tag automatically on
+          # a real `push` tag event; workflow_dispatch runs need it explicit.
+          tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           generate_release_notes: true
           files: build/distributions/*.zip

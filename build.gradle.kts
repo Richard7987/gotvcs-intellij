@@ -66,6 +66,14 @@ tasks {
     withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+            // Without this, Kotlin generates a forwarding override in every
+            // class implementing a Kotlin platform interface with default
+            // methods (e.g. VcsLogProvider), for binary compatibility with
+            // pre-Kotlin-1.4 consumers we don't need to support. Those
+            // forwarders show up to the Plugin Verifier as "deprecated
+            // method overridden/invoked" even though nothing in this plugin
+            // calls them directly.
+            jvmDefault.set(org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode.NO_COMPATIBILITY)
         }
     }
 }

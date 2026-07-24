@@ -15,7 +15,7 @@ class GotPushSupport(private val project: Project) : PushSupport<GotRepository, 
 
     private val commandLine = GotCommandLineWrapper()
     private val pusher = GotPusher(commandLine)
-    private val outgoingCommitsProvider = GotOutgoingCommitsProvider()
+    private val outgoingCommitsProvider = GotOutgoingCommitsProvider(commandLine)
 
     override fun getVcs(): AbstractVcs = ProjectLevelVcsManager.getInstance(project).findVcsByName(GotVcs.NAME)!!
 

@@ -32,6 +32,11 @@ dependencies {
         bundledModule("intellij.platform.vcs.dvcs.impl")
         // Referenced by OutgoingResult's commit list type (com.intellij.dvcs.push).
         bundledModule("intellij.platform.vcs.log")
+        // Hash/VcsUser (vcs.shared), HashImpl/VcsUserImpl (vcs.impl.shared) and
+        // GraphCommit (vcs.log.graph) back the outgoing-commits VcsFullCommitDetails.
+        bundledModule("intellij.platform.vcs.shared")
+        bundledModule("intellij.platform.vcs.impl.shared")
+        bundledModule("intellij.platform.vcs.log.graph")
     }
 }
 

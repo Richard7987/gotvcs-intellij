@@ -14,6 +14,16 @@ data class GotLogEntry(val commitId: String, val author: String, val date: Strin
 
 data class GotUpdateEntry(val code: Char, val path: String)
 
+data class GotCommitObject(
+    val commitId: String,
+    val parents: List<String>,
+    val authorName: String,
+    val authorEmail: String,
+    /** Seconds since the epoch, as stored in the commit object. */
+    val authorTimestamp: Long,
+    val message: String,
+)
+
 /**
  * Central entry point for every invocation of the `got` binary. The binary
  * path and SSH_AUTH_SOCK are configurable in Settings > Version Control >
@@ -180,5 +190,65 @@ class GotCommandLineWrapper {
             .filter { it.length >= 3 && it[1] == ' ' && it[2] == ' ' }
             .map { line -> GotUpdateEntry(line[0], line.substring(3)) }
             .toList()
+    }
+
+    /** Resolves `refs/remotes/<remote>/<branch>` to a commit ID via `got ref -l`, or null if it doesn't exist locally. */
+    @Throws(VcsException::class)
+    fun remoteBranchHash(workDir: File, remote: String, branch: String): String? {
+        val output = run(workDir, "ref", "-l")
+        val prefix = "refs/remotes/$remote/$branch:"
+        val line = output.lineSequence().firstOrNull { it.trim().startsWith(prefix) } ?: return null
+        return line.substringAfter(":").trim()
+    }
+
+    /**
+     * Commit IDs reachable from the current branch but not yet known to be on
+     * [remoteHash] (via `got log -x`), most recent first. If [remoteHash] is
+     * null (no local knowledge of the remote branch, e.g. before any fetch),
+     * this falls back to the full history up to [limit].
+     */
+    @Throws(VcsException::class)
+    fun outgoingCommitIds(workDir: File, remoteHash: String?, limit: Int = 200): List<String> {
+        val args = mutableListOf("log", "-l", limit.toString())
+        if (remoteHash != null) {
+            args.add("-x")
+            args.add(remoteHash)
+        }
+        val output = run(workDir, *args.toTypedArray())
+        return output.lineSequence()
+            .filter { it.startsWith("commit ") }
+            .map { it.removePrefix("commit ").trim().substringBefore(' ') }
+            .filter { it != remoteHash }
+            .toList()
+    }
+
+    private val commitAuthorPattern = Regex("""^(.*)\s+<(.+)>\s+(\d+)\s+[+-]\d{4}$""")
+
+    /** Parses the raw commit object printed by `got cat <commit-id>` (tree/parent/author/committer/message). */
+    @Throws(VcsException::class)
+    fun catCommit(workDir: File, commitId: String): GotCommitObject {
+        val lines = run(workDir, "cat", commitId).lines()
+        val parents = mutableListOf<String>()
+        var authorName = ""
+        var authorEmail = ""
+        var authorTimestamp = 0L
+        var messageStart = -1
+
+        for ((index, line) in lines.withIndex()) {
+            when {
+                line.startsWith("parent ") -> parents.add(line.removePrefix("parent ").trim())
+                line.startsWith("author ") -> {
+                    commitAuthorPattern.find(line.removePrefix("author ").trim())?.let { match ->
+                        authorName = match.groupValues[1].trim()
+                        authorEmail = match.groupValues[2]
+                        authorTimestamp = match.groupValues[3].toLongOrNull() ?: 0L
+                    }
+                }
+                line.startsWith("messagelen ") -> messageStart = index + 2
+            }
+        }
+
+        val message = if (messageStart in lines.indices) lines.drop(messageStart).joinToString("\n").trimEnd('\n') else ""
+        return GotCommitObject(commitId, parents, authorName, authorEmail, authorTimestamp, message)
     }
 }

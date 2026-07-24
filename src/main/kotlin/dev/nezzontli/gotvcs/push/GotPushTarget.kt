@@ -7,7 +7,7 @@ import com.intellij.dvcs.push.PushTarget
  * be a no-op, so [hasSomethingToPush] always returns true: `got send` itself
  * reports "nothing to send" if that turns out to be the case.
  */
-class GotPushTarget(private val remoteName: String, private val branch: String) : PushTarget {
+class GotPushTarget(val remoteName: String, val branch: String) : PushTarget {
     override fun hasSomethingToPush(): Boolean = true
     override fun getPresentation(): String = "$remoteName/$branch"
 }

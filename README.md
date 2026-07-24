@@ -22,16 +22,16 @@ There's no daemon and no cached repository model: every action shells out to
 the `got` binary for the relevant work tree and adapts its output to the
 corresponding IntelliJ Platform VCS API.
 
-| IntelliJ feature         | got command                    |
-|---------------------------|--------------------------------|
-| VCS root detection         | presence of a `.got/` directory |
-| File status                | `got status`                   |
-| Diff / gutter               | `got cat -c :base`              |
-| Commit                     | `got commit -m <message> <paths>` |
-| Rollback                   | `got revert -R <paths>`         |
-| History                    | `got log`                       |
-| Update Project             | `got fetch` + `got update`       |
-| Send                       | `got send`                      |
+| IntelliJ feature   | got command                       |
+|--------------------|-----------------------------------|
+| VCS root detection | presence of a `.got/` directory   |
+| File status        | `got status`                      |
+| Diff / gutter      | `got cat -c :base`                |
+| Commit             | `got commit -m <message> <paths>` |
+| Rollback           | `got revert -R <paths>`           |
+| History            | `got log`                         |
+| Update Project     | `got fetch` + `got update`        |
+| Send               | `got send`                        |
 
 Source is organized by responsibility under `dev.nezzontli.gotvcs`:
 
@@ -56,7 +56,7 @@ Source is organized by responsibility under `dev.nezzontli.gotvcs`:
 The resulting ZIP is written to `build/distributions/` and can be installed
 via *Settings > Plugins > ⚙ > Install Plugin from Disk*.
 
-By default this downloads a matching IntelliJ IDEA build to compile against.
+By default, this downloads a matching IntelliJ IDEA build to compile against.
 To use a local installation instead (faster, no download), set in
 `~/.gradle/gradle.properties` (not part of this repo):
 

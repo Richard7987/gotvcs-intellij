@@ -4,6 +4,10 @@ on:
   push:
     tags:
       - "v*"
+  # Manual fallback: mirrored pushes (e.g. Forgejo -> GitHub) don't always
+  # emit the `push` event Actions listens for. Run this against the tag you
+  # want to release from the "Run workflow" dropdown.
+  workflow_dispatch:
 
 permissions:
   contents: write

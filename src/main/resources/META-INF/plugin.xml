@@ -34,6 +34,7 @@
                                  order="after CodeStyleStatusBarWidget"/>
         <pushSupport implementation="dev.nezzontli.gotvcs.push.GotPushSupport"/>
         <logProvider implementation="dev.nezzontli.gotvcs.log.GotVcsLogProvider"/>
+        <postStartupActivity implementation="dev.nezzontli.gotvcs.log.GotVcsRootWatcher"/>
     </extensions>
 
     <actions>

@@ -1,6 +1,14 @@
 package dev.nezzontli.gotvcs.checkin
 
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionUiKind
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.actionSystem.ex.ActionUtil
+import com.intellij.openapi.actionSystem.impl.SimpleDataContext
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Key
 import com.intellij.openapi.vcs.FilePath
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.VcsException
@@ -10,7 +18,11 @@ import com.intellij.openapi.vcs.checkin.CheckinEnvironment
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import dev.nezzontli.gotvcs.cli.GotCommandLineWrapper
+import dev.nezzontli.gotvcs.repo.GotRepositoryManager
 import java.io.File
+
+/** Set by GotCommitAndSendExecutor on the CommitContext it's handed; read here once the commit succeeds. */
+val PUSH_AFTER_COMMIT_KEY: Key<Boolean> = Key.create("Got.Commit.PushAfterCommit")
 
 /**
  * got has no git-style staging index (aside from `got stage`, which this
@@ -41,23 +53,49 @@ class GotCheckinEnvironment(
         commitMessage: String,
         commitContext: CommitContext,
         feedback: MutableSet<in String>,
-    ): MutableList<VcsException> = doCommit(changes, commitMessage)
-
-    private fun doCommit(changes: List<Change>, commitMessage: String): MutableList<VcsException> =
-        commitFilePaths(changes.mapNotNull { it.afterRevision?.file ?: it.beforeRevision?.file }, commitMessage)
+    ): MutableList<VcsException> {
+        val exceptions = doCommit(changes, commitMessage)
+        if (exceptions.isEmpty() && commitContext.getUserData(PUSH_AFTER_COMMIT_KEY) == true) {
+            openPushDialogAfterCommit(changes)
+        }
+        return exceptions
+    }
 
     /**
-     * Exposed for GotCommitAndSendExecutor: unlike the default "Commit"
-     * button (a VCS_COMMIT session, for which the platform automatically
-     * calls scheduleUnversionedFilesForAddition()/scheduleMissingFileForDeletion()
-     * before committing), a custom CommitExecutor's session is on its own
-     * for that -- confirmed by decompiling ChangesViewCommitWorkflowHandler,
-     * whose addUnversionedFiles() is a no-op unless CommitSessionInfo.isVcsCommit()
-     * is true. This lets that caller commit an explicit path list (tracked
-     * changes plus whatever it scheduled for add/deletion itself) in one go.
+     * GotCommitAndSendExecutor's session is CommitSession.VCS_COMMIT itself
+     * (see that class) so this same, already-correct commit() path runs --
+     * unversioned/deleted files included -- exactly as for the plain
+     * "Commit" button; PUSH_AFTER_COMMIT_KEY just tells us to also open the
+     * Push dialog afterwards. Opening it is a UI action and must happen on
+     * the EDT, unlike commit() itself which may run on a background thread.
      */
-    fun commitFilePaths(filePaths: List<FilePath>, commitMessage: String): MutableList<VcsException> {
+    private fun openPushDialogAfterCommit(changes: List<Change>) {
+        val vcsManager = ProjectLevelVcsManager.getInstance(project)
+        val repositoryManager = project.getService(GotRepositoryManager::class.java)
+        val affectedRoots = changes.mapNotNull { it.afterRevision?.file ?: it.beforeRevision?.file }
+            .mapNotNull { vcsManager.getVcsRootFor(it) }
+            .toSet()
+        for (root in affectedRoots) {
+            repositoryManager.getRepositoryForRoot(root)?.update()
+        }
+
+        ApplicationManager.getApplication().invokeLater {
+            val pushAction = ActionManager.getInstance().getAction("Vcs.Push") ?: return@invokeLater
+            val dataContext = SimpleDataContext.getProjectContext(project)
+            val event = AnActionEvent.createEvent(
+                dataContext,
+                Presentation(),
+                "GotCommitAndSend",
+                ActionUiKind.NONE,
+                null,
+            )
+            ActionUtil.performAction(pushAction, event)
+        }
+    }
+
+    private fun doCommit(changes: List<Change>, commitMessage: String): MutableList<VcsException> {
         val exceptions = mutableListOf<VcsException>()
+        val filePaths = changes.mapNotNull { it.afterRevision?.file ?: it.beforeRevision?.file }
         for ((workDir, paths) in groupByRoot(filePaths)) {
             try {
                 commandLine.commit(workDir, commitMessage, paths)

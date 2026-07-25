@@ -41,6 +41,8 @@
         <pushSupport implementation="dev.nezzontli.gotvcs.push.GotPushSupport"/>
         <logProvider implementation="dev.nezzontli.gotvcs.log.GotVcsLogProvider"/>
         <postStartupActivity implementation="dev.nezzontli.gotvcs.log.GotVcsRootWatcher"/>
+        <checkoutProvider implementation="dev.nezzontli.gotvcs.checkout.GotCheckoutProvider"/>
+        <applicationService serviceImplementation="dev.nezzontli.gotvcs.checkout.GotRememberedInputs"/>
     </extensions>
 
     <actions>

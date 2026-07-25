@@ -316,4 +316,19 @@ class GotCommandLineWrapper {
         }
         return entries
     }
+
+    /**
+     * `got clone` only ever produces a bare repository, never a work tree
+     * (got has no non-bare repo layout) -- [checkout] is the separate step
+     * that populates a usable `.got/` work tree from it.
+     */
+    @Throws(VcsException::class)
+    fun clone(parentDir: File, url: String, bareRepoDir: File) {
+        run(parentDir, "clone", url, bareRepoDir.absolutePath)
+    }
+
+    @Throws(VcsException::class)
+    fun checkout(parentDir: File, bareRepoDir: File, workTreeDir: File) {
+        run(parentDir, "checkout", bareRepoDir.absolutePath, workTreeDir.absolutePath)
+    }
 }

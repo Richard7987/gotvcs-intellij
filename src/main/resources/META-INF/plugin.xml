@@ -12,6 +12,8 @@
             <li>A Log tab with the commit graph, refs, and per-commit
             changed files</li>
             <li>File history and Update Project (got update / got fetch)</li>
+            <li>Clone repositories over ssh:// from the native Clone
+            Repository dialog</li>
             <li>Branch name widget and native Push dialog (Ctrl+Shift+K)
             with real outgoing-commit detection</li>
             <li>Automatic refresh of the Commit panel and Log tab, including

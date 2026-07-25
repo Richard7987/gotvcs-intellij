@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "dev.nezzontli"
-version = "0.2.0"
+version = "0.2.1"
 
 repositories {
     mavenCentral()
@@ -48,14 +48,10 @@ intellijPlatform {
 
         changeNotes = """
             <ul>
-                <li>A Log tab (commit graph, refs, per-commit changed files)</li>
-                <li>Real outgoing-commit detection in the native Push dialog</li>
-                <li>A "Commit and Send" button that commits and opens Push</li>
-                <li>got recognized as a distributed VCS, enabling the
-                non-modal Commit tool window</li>
-                <li>Automatic refresh of the Commit panel and Log tab after
-                commit/push/update, and after external got changes (e.g. from
-                a terminal)</li>
+                <li>Clone repositories over ssh:// from the native Clone
+                Repository dialog ("Got" in the Version control dropdown)</li>
+                <li>GOT_AUTHOR now falls back to git config's user.name/
+                user.email when a repo doesn't define its own author</li>
             </ul>
         """.trimIndent()
     }

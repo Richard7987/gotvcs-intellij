@@ -56,12 +56,32 @@ class GotCommandLineWrapper {
         return if (fallback.exists()) fallback.path else null
     }
 
+    /**
+     * A freshly `got clone`d repo's got.conf only stores the remote, so
+     * `got commit` fails with "GOT_AUTHOR environment variable is not set"
+     * until something provides an author. got.conf and repo-local git config
+     * both take precedence over this env var, so setting it is a safe
+     * fallback that never overrides an explicit per-repo author.
+     */
+    private val gitAuthorFallback: String? by lazy {
+        fun gitConfigValue(key: String): String? = try {
+            val output = ExecUtil.execAndGetOutput(GeneralCommandLine("git", "config", "--get", key))
+            output.stdout.trim().takeIf { output.exitCode == 0 && it.isNotEmpty() }
+        } catch (e: ExecutionException) {
+            null
+        }
+        val name = gitConfigValue("user.name") ?: return@lazy null
+        val email = gitConfigValue("user.email") ?: return@lazy null
+        "$name <$email>"
+    }
+
     private fun run(workDir: File, vararg args: String): String {
         val commandLine = GeneralCommandLine(binaryPath(), *args)
             .withWorkDirectory(workDir)
             .withCharset(StandardCharsets.UTF_8)
             .withParentEnvironmentType(GeneralCommandLine.ParentEnvironmentType.SYSTEM)
         sshAuthSock()?.let { commandLine.environment["SSH_AUTH_SOCK"] = it }
+        gitAuthorFallback?.let { commandLine.environment["GOT_AUTHOR"] = it }
         val output = try {
             ExecUtil.execAndGetOutput(commandLine)
         } catch (e: ExecutionException) {
